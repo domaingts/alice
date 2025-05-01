@@ -43,11 +43,15 @@ func NewServer(ctx context.Context, dest net.Destination, dispatcher routing.Dis
 		}
 		switch {
 		case strings.EqualFold(u.String(), "localhost"):
-			return NewLocalNameServer(), nil
-		case strings.EqualFold(u.Scheme, "https"): // DOH Remote mode
-			return NewDoHNameServer(u, dispatcher, queryStrategy)
-		case strings.EqualFold(u.Scheme, "https+local"): // DOH Local mode
-			return NewDoHLocalNameServer(u, queryStrategy), nil
+			return NewLocalNameServer(queryStrategy), nil
+		case strings.EqualFold(u.Scheme, "https"): // DNS-over-HTTPS Remote mode
+			return NewDoHNameServer(u, queryStrategy, dispatcher, false), nil
+		case strings.EqualFold(u.Scheme, "h2c"): // DNS-over-HTTPS h2c Remote mode
+			return NewDoHNameServer(u, queryStrategy, dispatcher, true), nil
+		case strings.EqualFold(u.Scheme, "https+local"): // DNS-over-HTTPS Local mode
+			return NewDoHNameServer(u, queryStrategy, nil, false), nil
+		case strings.EqualFold(u.Scheme, "h2c+local"): // DNS-over-HTTPS h2c Local mode
+			return NewDoHNameServer(u, queryStrategy, nil, true), nil
 		case strings.EqualFold(u.Scheme, "quic+local"): // DNS-over-QUIC Local mode
 			return NewQUICNameServer(u, queryStrategy)
 		case strings.EqualFold(u.Scheme, "tcp"): // DNS-over-TCP Remote mode
@@ -56,7 +60,7 @@ func NewServer(ctx context.Context, dest net.Destination, dispatcher routing.Dis
 			return NewTCPLocalNameServer(u, queryStrategy)
 		case strings.EqualFold(u.String(), "fakedns"):
 			var fd dns.FakeDNSEngine
-			core.RequireFeatures(ctx, func(fdns dns.FakeDNSEngine) { // FakeDNSEngine is optional
+			core.RequireFeatures(ctx, func(fdns dns.FakeDNSEngine) {
 				fd = fdns
 			})
 			return NewFakeDNSServer(fd), nil
