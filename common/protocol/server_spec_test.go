@@ -5,11 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/xtls/xray-core/common"
 	"github.com/xtls/xray-core/common/net"
 	. "github.com/xtls/xray-core/common/protocol"
-	"github.com/xtls/xray-core/common/uuid"
-	"github.com/xtls/xray-core/proxy/vmess"
 )
 
 func TestAlwaysValidStrategy(t *testing.T) {
@@ -37,36 +34,6 @@ func TestTimeoutValidStrategy(t *testing.T) {
 	strategy.Invalidate()
 	if strategy.IsValid() {
 		t.Error("strategy is valid")
-	}
-}
-
-func TestUserInServerSpec(t *testing.T) {
-	uuid1 := uuid.New()
-	uuid2 := uuid.New()
-
-	toAccount := func(a *vmess.Account) Account {
-		account, err := a.AsAccount()
-		common.Must(err)
-		return account
-	}
-
-	spec := NewServerSpec(net.Destination{}, AlwaysValid(), &MemoryUser{
-		Email:   "test1@example.com",
-		Account: toAccount(&vmess.Account{Id: uuid1.String()}),
-	})
-	if spec.HasUser(&MemoryUser{
-		Email:   "test1@example.com",
-		Account: toAccount(&vmess.Account{Id: uuid2.String()}),
-	}) {
-		t.Error("has user: ", uuid2)
-	}
-
-	spec.AddUser(&MemoryUser{Email: "test2@example.com"})
-	if !spec.HasUser(&MemoryUser{
-		Email:   "test1@example.com",
-		Account: toAccount(&vmess.Account{Id: uuid1.String()}),
-	}) {
-		t.Error("not having user: ", uuid1)
 	}
 }
 
