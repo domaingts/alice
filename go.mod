@@ -12,8 +12,8 @@ require (
 	github.com/miekg/dns v1.1.65
 	github.com/pelletier/go-toml v1.9.5
 	github.com/pires/go-proxyproto v0.8.0
-	github.com/quic-go/quic-go v0.50.0
-	github.com/refraction-networking/utls v1.6.7
+	github.com/quic-go/quic-go v0.51.0
+	github.com/refraction-networking/utls v1.7.1
 	github.com/sagernet/sing v0.6.7
 	github.com/sagernet/sing-shadowsocks v0.2.7
 	github.com/seiflotfy/cuckoofilter v0.0.0-20240715131351-a2f2c23f1771
@@ -29,7 +29,7 @@ require (
 	golang.zx2c4.com/wireguard v0.0.0-20231211153847-12269c276173
 	google.golang.org/grpc v1.72.0
 	google.golang.org/protobuf v1.36.6
-	gvisor.dev/gvisor v0.0.0-20240320123526-dc6abceb7ff0
+	gvisor.dev/gvisor v0.0.0-20250428193742-2d800c3129d5
 	lukechampine.com/blake3 v1.4.0
 )
 
@@ -48,7 +48,6 @@ require (
 	github.com/riobard/go-bloom v0.0.0-20200614022211-cdc8013cb5b3 // indirect
 	github.com/vishvananda/netns v0.0.4 // indirect
 	go.uber.org/mock v0.5.0 // indirect
-	golang.org/x/exp v0.0.0-20240531132922-fd00a4e0eefc // indirect
 	golang.org/x/mod v0.23.0 // indirect
 	golang.org/x/text v0.24.0 // indirect
 	golang.org/x/time v0.7.0 // indirect
