@@ -198,7 +198,7 @@ func RegisterHandlerServiceServer(s grpc.ServiceRegistrar, srv HandlerServiceSer
 	s.RegisterService(&HandlerService_ServiceDesc, srv)
 }
 
-func _HandlerService_AddInbound_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _HandlerService_AddInbound_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(AddInboundRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -210,13 +210,13 @@ func _HandlerService_AddInbound_Handler(srv interface{}, ctx context.Context, de
 		Server:     srv,
 		FullMethod: HandlerService_AddInbound_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(HandlerServiceServer).AddInbound(ctx, req.(*AddInboundRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _HandlerService_RemoveInbound_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _HandlerService_RemoveInbound_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(RemoveInboundRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -228,13 +228,13 @@ func _HandlerService_RemoveInbound_Handler(srv interface{}, ctx context.Context,
 		Server:     srv,
 		FullMethod: HandlerService_RemoveInbound_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(HandlerServiceServer).RemoveInbound(ctx, req.(*RemoveInboundRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _HandlerService_AlterInbound_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _HandlerService_AlterInbound_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(AlterInboundRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -246,13 +246,13 @@ func _HandlerService_AlterInbound_Handler(srv interface{}, ctx context.Context, 
 		Server:     srv,
 		FullMethod: HandlerService_AlterInbound_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(HandlerServiceServer).AlterInbound(ctx, req.(*AlterInboundRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _HandlerService_GetInboundUsers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _HandlerService_GetInboundUsers_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(GetInboundUserRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -264,13 +264,13 @@ func _HandlerService_GetInboundUsers_Handler(srv interface{}, ctx context.Contex
 		Server:     srv,
 		FullMethod: HandlerService_GetInboundUsers_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(HandlerServiceServer).GetInboundUsers(ctx, req.(*GetInboundUserRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _HandlerService_GetInboundUsersCount_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _HandlerService_GetInboundUsersCount_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(GetInboundUserRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -282,13 +282,13 @@ func _HandlerService_GetInboundUsersCount_Handler(srv interface{}, ctx context.C
 		Server:     srv,
 		FullMethod: HandlerService_GetInboundUsersCount_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(HandlerServiceServer).GetInboundUsersCount(ctx, req.(*GetInboundUserRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _HandlerService_AddOutbound_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _HandlerService_AddOutbound_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(AddOutboundRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -300,13 +300,13 @@ func _HandlerService_AddOutbound_Handler(srv interface{}, ctx context.Context, d
 		Server:     srv,
 		FullMethod: HandlerService_AddOutbound_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(HandlerServiceServer).AddOutbound(ctx, req.(*AddOutboundRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _HandlerService_RemoveOutbound_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _HandlerService_RemoveOutbound_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(RemoveOutboundRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -318,13 +318,13 @@ func _HandlerService_RemoveOutbound_Handler(srv interface{}, ctx context.Context
 		Server:     srv,
 		FullMethod: HandlerService_RemoveOutbound_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(HandlerServiceServer).RemoveOutbound(ctx, req.(*RemoveOutboundRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _HandlerService_AlterOutbound_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _HandlerService_AlterOutbound_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(AlterOutboundRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -336,7 +336,7 @@ func _HandlerService_AlterOutbound_Handler(srv interface{}, ctx context.Context,
 		Server:     srv,
 		FullMethod: HandlerService_AlterOutbound_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(HandlerServiceServer).AlterOutbound(ctx, req.(*AlterOutboundRequest))
 	}
 	return interceptor(ctx, in, info, handler)

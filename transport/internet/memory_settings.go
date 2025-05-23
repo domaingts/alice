@@ -6,9 +6,9 @@ import "github.com/xtls/xray-core/common/net"
 type MemoryStreamConfig struct {
 	Destination      *net.Destination
 	ProtocolName     string
-	ProtocolSettings interface{}
+	ProtocolSettings any
 	SecurityType     string
-	SecuritySettings interface{}
+	SecuritySettings any
 	SocketSettings   *SocketConfig
 	DownloadSettings *MemoryStreamConfig
 }

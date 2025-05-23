@@ -62,7 +62,7 @@ func (m *ProxyInbound) Process(arg0 context.Context, arg1 net.Network, arg2 stat
 }
 
 // Process indicates an expected call of Process
-func (mr *ProxyInboundMockRecorder) Process(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+func (mr *ProxyInboundMockRecorder) Process(arg0, arg1, arg2, arg3 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Process", reflect.TypeOf((*ProxyInbound)(nil).Process), arg0, arg1, arg2, arg3)
 }
@@ -99,7 +99,7 @@ func (m *ProxyOutbound) Process(arg0 context.Context, arg1 *transport.Link, arg2
 }
 
 // Process indicates an expected call of Process
-func (mr *ProxyOutboundMockRecorder) Process(arg0, arg1, arg2 interface{}) *gomock.Call {
+func (mr *ProxyOutboundMockRecorder) Process(arg0, arg1, arg2 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Process", reflect.TypeOf((*ProxyOutbound)(nil).Process), arg0, arg1, arg2)
 }

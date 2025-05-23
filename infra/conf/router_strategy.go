@@ -17,10 +17,10 @@ const (
 
 var (
 	strategyConfigLoader = NewJSONConfigLoader(ConfigCreatorCache{
-		strategyRandom:     func() interface{} { return new(strategyEmptyConfig) },
-		strategyLeastPing:  func() interface{} { return new(strategyEmptyConfig) },
-		strategyRoundRobin: func() interface{} { return new(strategyEmptyConfig) },
-		strategyLeastLoad:  func() interface{} { return new(strategyLeastLoadConfig) },
+		strategyRandom:     func() any { return new(strategyEmptyConfig) },
+		strategyLeastPing:  func() any { return new(strategyEmptyConfig) },
+		strategyRoundRobin: func() any { return new(strategyEmptyConfig) },
+		strategyLeastLoad:  func() any { return new(strategyLeastLoadConfig) },
 	}, "type", "settings")
 )
 

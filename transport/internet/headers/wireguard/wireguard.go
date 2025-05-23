@@ -21,7 +21,7 @@ func (Wireguard) Serialize(b []byte) {
 }
 
 // NewWireguard returns a new VideoChat instance based on given config.
-func NewWireguard(ctx context.Context, config interface{}) (interface{}, error) {
+func NewWireguard(ctx context.Context, config any) (any, error) {
 	return Wireguard{}, nil
 }
 

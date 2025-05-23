@@ -60,7 +60,7 @@ func (m *DNSClient) LookupIP(arg0 string, arg1 dns.IPOption) ([]net.IP, uint32, 
 }
 
 // LookupIP indicates an expected call of LookupIP
-func (mr *DNSClientMockRecorder) LookupIP(arg0, arg1 interface{}) *gomock.Call {
+func (mr *DNSClientMockRecorder) LookupIP(arg0, arg1 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LookupIP", reflect.TypeOf((*DNSClient)(nil).LookupIP), arg0, arg1)
 }
@@ -80,10 +80,10 @@ func (mr *DNSClientMockRecorder) Start() *gomock.Call {
 }
 
 // Type mocks base method
-func (m *DNSClient) Type() interface{} {
+func (m *DNSClient) Type() any {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Type")
-	ret0, _ := ret[0].(interface{})
+	ret0, _ := ret[0].(any)
 	return ret0
 }
 

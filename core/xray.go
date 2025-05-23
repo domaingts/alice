@@ -26,13 +26,13 @@ type Server interface {
 }
 
 // ServerType returns the type of the server.
-func ServerType() interface{} {
+func ServerType() any {
 	return (*Instance)(nil)
 }
 
 type resolution struct {
 	deps     []reflect.Type
-	callback interface{}
+	callback any
 }
 
 func getFeature(allFeatures []features.Feature, t reflect.Type) features.Feature {
@@ -144,14 +144,14 @@ func addOutboundHandlers(server *Instance, configs []*OutboundHandlerConfig) err
 
 // RequireFeatures is a helper function to require features from Instance in context.
 // See Instance.RequireFeatures for more information.
-func RequireFeatures(ctx context.Context, callback interface{}) error {
+func RequireFeatures(ctx context.Context, callback any) error {
 	v := MustFromContext(ctx)
 	return v.RequireFeatures(callback, false)
 }
 
 // OptionalFeatures is a helper function to aquire features from Instance in context.
 // See Instance.RequireFeatures for more information.
-func OptionalFeatures(ctx context.Context, callback interface{}) error {
+func OptionalFeatures(ctx context.Context, callback any) error {
 	v := MustFromContext(ctx)
 	return v.RequireFeatures(callback, true)
 }
@@ -202,7 +202,7 @@ func initInstanceWithConfig(config *Config, server *Instance) (bool, error) {
 	}
 
 	essentialFeatures := []struct {
-		Type     interface{}
+		Type     any
 		Instance features.Feature
 	}{
 		{dns.ClientType(), localdns.New()},
@@ -245,7 +245,7 @@ func initInstanceWithConfig(config *Config, server *Instance) (bool, error) {
 }
 
 // Type implements common.HasType.
-func (s *Instance) Type() interface{} {
+func (s *Instance) Type() any {
 	return ServerType()
 }
 
@@ -256,7 +256,7 @@ func (s *Instance) Close() error {
 
 	s.running = false
 
-	var errs []interface{}
+	var errs []any
 	for _, f := range s.features {
 		if err := f.Close(); err != nil {
 			errs = append(errs, err)
@@ -271,7 +271,7 @@ func (s *Instance) Close() error {
 
 // RequireFeatures registers a callback, which will be called when all dependent features are registered.
 // The callback must be a func(). All its parameters must be features.Feature.
-func (s *Instance) RequireFeatures(callback interface{}, optional bool) error {
+func (s *Instance) RequireFeatures(callback any, optional bool) error {
 	callbackType := reflect.TypeOf(callback)
 	if callbackType.Kind() != reflect.Func {
 		panic("not a function")
@@ -368,7 +368,7 @@ func (s *Instance) AddFeature(feature features.Feature) error {
 }
 
 // GetFeature returns a feature of the given type, or nil if such feature is not registered.
-func (s *Instance) GetFeature(featureType interface{}) features.Feature {
+func (s *Instance) GetFeature(featureType any) features.Feature {
 	return getFeature(s.features, reflect.TypeOf(featureType))
 }
 

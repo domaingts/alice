@@ -28,18 +28,18 @@ import (
 
 var (
 	kcpHeaderLoader = NewJSONConfigLoader(ConfigCreatorCache{
-		"none":         func() interface{} { return new(NoOpAuthenticator) },
-		"srtp":         func() interface{} { return new(SRTPAuthenticator) },
-		"utp":          func() interface{} { return new(UTPAuthenticator) },
-		"wechat-video": func() interface{} { return new(WechatVideoAuthenticator) },
-		"dtls":         func() interface{} { return new(DTLSAuthenticator) },
-		"wireguard":    func() interface{} { return new(WireguardAuthenticator) },
-		"dns":          func() interface{} { return new(DNSAuthenticator) },
+		"none":         func() any { return new(NoOpAuthenticator) },
+		"srtp":         func() any { return new(SRTPAuthenticator) },
+		"utp":          func() any { return new(UTPAuthenticator) },
+		"wechat-video": func() any { return new(WechatVideoAuthenticator) },
+		"dtls":         func() any { return new(DTLSAuthenticator) },
+		"wireguard":    func() any { return new(WireguardAuthenticator) },
+		"dns":          func() any { return new(DNSAuthenticator) },
 	}, "type", "")
 
 	tcpHeaderLoader = NewJSONConfigLoader(ConfigCreatorCache{
-		"none": func() interface{} { return new(NoOpConnectionAuthenticator) },
-		"http": func() interface{} { return new(Authenticator) },
+		"none": func() any { return new(NoOpConnectionAuthenticator) },
+		"http": func() any { return new(Authenticator) },
 	}, "type", "")
 )
 
@@ -701,7 +701,7 @@ type CustomSockoptConfig struct {
 
 type SocketConfig struct {
 	Mark                 int32                  `json:"mark"`
-	TFO                  interface{}            `json:"tcpFastOpen"`
+	TFO                  any                    `json:"tcpFastOpen"`
 	TProxy               string                 `json:"tproxy"`
 	AcceptProxyProtocol  bool                   `json:"acceptProxyProtocol"`
 	DomainStrategy       string                 `json:"domainStrategy"`

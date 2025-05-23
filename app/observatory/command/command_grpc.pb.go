@@ -86,7 +86,7 @@ func RegisterObservatoryServiceServer(s grpc.ServiceRegistrar, srv ObservatorySe
 	s.RegisterService(&ObservatoryService_ServiceDesc, srv)
 }
 
-func _ObservatoryService_GetOutboundStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _ObservatoryService_GetOutboundStatus_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(GetOutboundStatusRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -98,7 +98,7 @@ func _ObservatoryService_GetOutboundStatus_Handler(srv interface{}, ctx context.
 		Server:     srv,
 		FullMethod: ObservatoryService_GetOutboundStatus_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(ObservatoryServiceServer).GetOutboundStatus(ctx, req.(*GetOutboundStatusRequest))
 	}
 	return interceptor(ctx, in, info, handler)

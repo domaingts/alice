@@ -2,8 +2,8 @@ package bytespool
 
 import "sync"
 
-func createAllocFunc(size int32) func() interface{} {
-	return func() interface{} {
+func createAllocFunc(size int32) func() any {
+	return func() any {
 		return make([]byte, size)
 	}
 }

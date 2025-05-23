@@ -48,7 +48,7 @@ type AlwaysOnInboundHandler struct {
 	tag     string
 }
 
-func NewAlwaysOnInboundHandler(ctx context.Context, tag string, receiverConfig *proxyman.ReceiverConfig, proxyConfig interface{}) (*AlwaysOnInboundHandler, error) {
+func NewAlwaysOnInboundHandler(ctx context.Context, tag string, receiverConfig *proxyman.ReceiverConfig, proxyConfig any) (*AlwaysOnInboundHandler, error) {
 	rawProxy, err := common.CreateObject(ctx, proxyConfig)
 	if err != nil {
 		return nil, err
@@ -172,7 +172,7 @@ func (h *AlwaysOnInboundHandler) Close() error {
 	return nil
 }
 
-func (h *AlwaysOnInboundHandler) GetRandomInboundProxy() (interface{}, net.Port, int) {
+func (h *AlwaysOnInboundHandler) GetRandomInboundProxy() (any, net.Port, int) {
 	if len(h.workers) == 0 {
 		return nil, 0, 0
 	}

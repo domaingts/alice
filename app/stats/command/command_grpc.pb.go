@@ -150,7 +150,7 @@ func RegisterStatsServiceServer(s grpc.ServiceRegistrar, srv StatsServiceServer)
 	s.RegisterService(&StatsService_ServiceDesc, srv)
 }
 
-func _StatsService_GetStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _StatsService_GetStats_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(GetStatsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -162,13 +162,13 @@ func _StatsService_GetStats_Handler(srv interface{}, ctx context.Context, dec fu
 		Server:     srv,
 		FullMethod: StatsService_GetStats_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(StatsServiceServer).GetStats(ctx, req.(*GetStatsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _StatsService_GetStatsOnline_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _StatsService_GetStatsOnline_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(GetStatsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -180,13 +180,13 @@ func _StatsService_GetStatsOnline_Handler(srv interface{}, ctx context.Context, 
 		Server:     srv,
 		FullMethod: StatsService_GetStatsOnline_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(StatsServiceServer).GetStatsOnline(ctx, req.(*GetStatsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _StatsService_QueryStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _StatsService_QueryStats_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(QueryStatsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -198,13 +198,13 @@ func _StatsService_QueryStats_Handler(srv interface{}, ctx context.Context, dec 
 		Server:     srv,
 		FullMethod: StatsService_QueryStats_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(StatsServiceServer).QueryStats(ctx, req.(*QueryStatsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _StatsService_GetSysStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _StatsService_GetSysStats_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(SysStatsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -216,13 +216,13 @@ func _StatsService_GetSysStats_Handler(srv interface{}, ctx context.Context, dec
 		Server:     srv,
 		FullMethod: StatsService_GetSysStats_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(StatsServiceServer).GetSysStats(ctx, req.(*SysStatsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _StatsService_GetStatsOnlineIpList_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _StatsService_GetStatsOnlineIpList_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(GetStatsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -234,7 +234,7 @@ func _StatsService_GetStatsOnlineIpList_Handler(srv interface{}, ctx context.Con
 		Server:     srv,
 		FullMethod: StatsService_GetStatsOnlineIpList_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(StatsServiceServer).GetStatsOnlineIpList(ctx, req.(*GetStatsRequest))
 	}
 	return interceptor(ctx, in, info, handler)

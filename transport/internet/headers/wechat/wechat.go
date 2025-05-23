@@ -32,7 +32,7 @@ func (vc *VideoChat) Serialize(b []byte) {
 }
 
 // NewVideoChat returns a new VideoChat instance based on given config.
-func NewVideoChat(ctx context.Context, config interface{}) (interface{}, error) {
+func NewVideoChat(ctx context.Context, config any) (any, error) {
 	return &VideoChat{
 		sn: uint32(dice.RollUint16()),
 	}, nil

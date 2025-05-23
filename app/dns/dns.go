@@ -143,7 +143,7 @@ func New(ctx context.Context, config *Config) (*DNS, error) {
 }
 
 // Type implements common.HasType.
-func (*DNS) Type() interface{} {
+func (*DNS) Type() any {
 	return dns.ClientType()
 }
 
@@ -298,7 +298,7 @@ func (s *DNS) sortClients(domain string) []*Client {
 }
 
 func init() {
-	common.Must(common.RegisterConfig((*Config)(nil), func(ctx context.Context, config interface{}) (interface{}, error) {
+	common.Must(common.RegisterConfig((*Config)(nil), func(ctx context.Context, config any) (any, error) {
 		return New(ctx, config.(*Config))
 	}))
 }

@@ -26,7 +26,7 @@ func (u *UTP) Serialize(b []byte) {
 }
 
 // New creates a new UTP header for the given config.
-func New(ctx context.Context, config interface{}) (interface{}, error) {
+func New(ctx context.Context, config any) (any, error) {
 	return &UTP{
 		header:       1,
 		extension:    0,

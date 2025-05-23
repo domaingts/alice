@@ -25,7 +25,7 @@ func (s *SRTP) Serialize(b []byte) {
 }
 
 // New returns a new SRTP instance based on the given config.
-func New(ctx context.Context, config interface{}) (interface{}, error) {
+func New(ctx context.Context, config any) (any, error) {
 	return &SRTP{
 		header: 0xB5E8,
 		number: dice.RollUint16(),

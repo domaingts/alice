@@ -73,7 +73,7 @@ func (v *MemoryValidator) GetByEmail(email string) *protocol.MemoryUser {
 // Get all users
 func (v *MemoryValidator) GetAll() []*protocol.MemoryUser {
 	var u = make([]*protocol.MemoryUser, 0, 100)
-	v.email.Range(func(key, value interface{}) bool {
+	v.email.Range(func(key, value any) bool {
 		u = append(u, value.(*protocol.MemoryUser))
 		return true
 	})
@@ -83,7 +83,7 @@ func (v *MemoryValidator) GetAll() []*protocol.MemoryUser {
 // Get users count
 func (v *MemoryValidator) GetCount() int64 {
 	var c int64 = 0
-	v.email.Range(func(key, value interface{}) bool {
+	v.email.Range(func(key, value any) bool {
 		c++
 		return true
 	})

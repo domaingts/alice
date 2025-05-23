@@ -13,6 +13,6 @@ type Observatory interface {
 	GetObservation(ctx context.Context) (proto.Message, error)
 }
 
-func ObservatoryType() interface{} {
+func ObservatoryType() any {
 	return (*Observatory)(nil)
 }

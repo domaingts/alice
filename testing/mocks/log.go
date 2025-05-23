@@ -41,7 +41,7 @@ func (m *LogHandler) Handle(arg0 log.Message) {
 }
 
 // Handle indicates an expected call of Handle
-func (mr *LogHandlerMockRecorder) Handle(arg0 interface{}) *gomock.Call {
+func (mr *LogHandlerMockRecorder) Handle(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Handle", reflect.TypeOf((*LogHandler)(nil).Handle), arg0)
 }

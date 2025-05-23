@@ -24,7 +24,7 @@ func (d DNS) Serialize(b []byte) {
 }
 
 // NewDNS returns a new DNS instance based on given config.
-func NewDNS(ctx context.Context, config interface{}) (interface{}, error) {
+func NewDNS(ctx context.Context, config any) (any, error) {
 	var header []byte
 
 	header = binary.BigEndian.AppendUint16(header, 0x0000) // Transaction ID

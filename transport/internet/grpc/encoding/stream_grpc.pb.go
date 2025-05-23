@@ -108,14 +108,14 @@ func RegisterGRPCServiceServer(s grpc.ServiceRegistrar, srv GRPCServiceServer) {
 	s.RegisterService(&GRPCService_ServiceDesc, srv)
 }
 
-func _GRPCService_Tun_Handler(srv interface{}, stream grpc.ServerStream) error {
+func _GRPCService_Tun_Handler(srv any, stream grpc.ServerStream) error {
 	return srv.(GRPCServiceServer).Tun(&grpc.GenericServerStream[Hunk, Hunk]{ServerStream: stream})
 }
 
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type GRPCService_TunServer = grpc.BidiStreamingServer[Hunk, Hunk]
 
-func _GRPCService_TunMulti_Handler(srv interface{}, stream grpc.ServerStream) error {
+func _GRPCService_TunMulti_Handler(srv any, stream grpc.ServerStream) error {
 	return srv.(GRPCServiceServer).TunMulti(&grpc.GenericServerStream[MultiHunk, MultiHunk]{ServerStream: stream})
 }
 

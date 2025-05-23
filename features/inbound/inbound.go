@@ -17,7 +17,7 @@ type Handler interface {
 	Tag() string
 
 	// Deprecated: Do not use in new code.
-	GetRandomInboundProxy() (interface{}, net.Port, int)
+	GetRandomInboundProxy() (any, net.Port, int)
 }
 
 // Manager is a feature that manages InboundHandlers.
@@ -37,6 +37,6 @@ type Manager interface {
 // ManagerType returns the type of Manager interface. Can be used for implementing common.HasType.
 //
 // xray:api:stable
-func ManagerType() interface{} {
+func ManagerType() any {
 	return (*Manager)(nil)
 }

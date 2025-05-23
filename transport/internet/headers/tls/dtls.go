@@ -42,7 +42,7 @@ func (d *DTLS) Serialize(b []byte) {
 }
 
 // New creates a new UTP header for the given config.
-func New(ctx context.Context, config interface{}) (interface{}, error) {
+func New(ctx context.Context, config any) (any, error) {
 	return &DTLS{
 		epoch:    dice.RollUint16(),
 		sequence: 0,

@@ -27,7 +27,7 @@ func (c *Config) GetRequestHeader() http.Header {
 }
 
 func init() {
-	common.Must(internet.RegisterProtocolConfigCreator(protocolName, func() interface{} {
+	common.Must(internet.RegisterProtocolConfigCreator(protocolName, func() any {
 		return new(Config)
 	}))
 }

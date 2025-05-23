@@ -14,7 +14,7 @@ import (
 
 func TestAllHeadersLoadable(t *testing.T) {
 	testCases := []struct {
-		Input interface{}
+		Input any
 		Size  int32
 	}{
 		{

@@ -49,14 +49,14 @@ func executeECH(cmd *base.Command, args []string) {
 	configPEM := string(pem.EncodeToMemory(&pem.Block{Type: "ECH CONFIGS", Bytes: configBuffer}))
 	keyPEM := string(pem.EncodeToMemory(&pem.Block{Type: "ECH KEYS", Bytes: keyBuffer}))
 	if *input_json {
-		jECHConfigs := map[string]interface{}{
+		jECHConfigs := map[string]any{
 			"configs": strings.Split(strings.TrimSpace(string(configPEM)), "\n"),
 		}
-		jECHKey := map[string]interface{}{
+		jECHKey := map[string]any{
 			"key": strings.Split(strings.TrimSpace(string(keyPEM)), "\n"),
 		}
 
-		for _, i := range []map[string]interface{}{jECHConfigs, jECHKey} {
+		for _, i := range []map[string]any{jECHConfigs, jECHKey} {
 			content, err := json.MarshalIndent(i, "", "  ")
 			common.Must(err)
 			os.Stdout.Write(content)

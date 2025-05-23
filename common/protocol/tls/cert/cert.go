@@ -93,7 +93,7 @@ func MustGenerate(parent *Certificate, opts ...Option) *Certificate {
 	return cert
 }
 
-func publicKey(priv interface{}) interface{} {
+func publicKey(priv any) any {
 	switch k := priv.(type) {
 	case *rsa.PrivateKey:
 		return &k.PublicKey
@@ -108,8 +108,8 @@ func publicKey(priv interface{}) interface{} {
 
 func Generate(parent *Certificate, opts ...Option) (*Certificate, error) {
 	var (
-		pKey      interface{}
-		parentKey interface{}
+		pKey      any
+		parentKey any
 		err       error
 	)
 	// higher signing performance than RSA2048

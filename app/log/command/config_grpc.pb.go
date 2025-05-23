@@ -86,7 +86,7 @@ func RegisterLoggerServiceServer(s grpc.ServiceRegistrar, srv LoggerServiceServe
 	s.RegisterService(&LoggerService_ServiceDesc, srv)
 }
 
-func _LoggerService_RestartLogger_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _LoggerService_RestartLogger_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(RestartLoggerRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -98,7 +98,7 @@ func _LoggerService_RestartLogger_Handler(srv interface{}, ctx context.Context, 
 		Server:     srv,
 		FullMethod: LoggerService_RestartLogger_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(LoggerServiceServer).RestartLogger(ctx, req.(*RestartLoggerRequest))
 	}
 	return interceptor(ctx, in, info, handler)

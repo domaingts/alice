@@ -19,7 +19,7 @@ import (
 type DynamicInboundHandler struct {
 	tag            string
 	v              *core.Instance
-	proxyConfig    interface{}
+	proxyConfig    any
 	receiverConfig *proxyman.ReceiverConfig
 	streamSettings *internet.MemoryStreamConfig
 	portMutex      sync.Mutex
@@ -33,7 +33,7 @@ type DynamicInboundHandler struct {
 	ctx context.Context
 }
 
-func NewDynamicInboundHandler(ctx context.Context, tag string, receiverConfig *proxyman.ReceiverConfig, proxyConfig interface{}) (*DynamicInboundHandler, error) {
+func NewDynamicInboundHandler(ctx context.Context, tag string, receiverConfig *proxyman.ReceiverConfig, proxyConfig any) (*DynamicInboundHandler, error) {
 	v := core.MustFromContext(ctx)
 	h := &DynamicInboundHandler{
 		tag:            tag,
@@ -190,7 +190,7 @@ func (h *DynamicInboundHandler) Close() error {
 	return h.task.Close()
 }
 
-func (h *DynamicInboundHandler) GetRandomInboundProxy() (interface{}, net.Port, int) {
+func (h *DynamicInboundHandler) GetRandomInboundProxy() (any, net.Port, int) {
 	h.workerMutex.RLock()
 	defer h.workerMutex.RUnlock()
 

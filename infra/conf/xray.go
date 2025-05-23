@@ -21,23 +21,23 @@ import (
 
 var (
 	inboundConfigLoader = NewJSONConfigLoader(ConfigCreatorCache{
-		"dokodemo-door": func() interface{} { return new(DokodemoConfig) },
-		"http":          func() interface{} { return new(HTTPServerConfig) },
-		"shadowsocks":   func() interface{} { return new(ShadowsocksServerConfig) },
-		"mixed":         func() interface{} { return new(SocksServerConfig) },
-		"socks":         func() interface{} { return new(SocksServerConfig) },
-		"vless":         func() interface{} { return new(VLessInboundConfig) },
+		"dokodemo-door": func() any { return new(DokodemoConfig) },
+		"http":          func() any { return new(HTTPServerConfig) },
+		"shadowsocks":   func() any { return new(ShadowsocksServerConfig) },
+		"mixed":         func() any { return new(SocksServerConfig) },
+		"socks":         func() any { return new(SocksServerConfig) },
+		"vless":         func() any { return new(VLessInboundConfig) },
 	}, "protocol", "settings")
 
 	outboundConfigLoader = NewJSONConfigLoader(ConfigCreatorCache{
-		"blackhole":   func() interface{} { return new(BlackholeConfig) },
-		"loopback":    func() interface{} { return new(LoopbackConfig) },
-		"freedom":     func() interface{} { return new(FreedomConfig) },
-		"http":        func() interface{} { return new(HTTPClientConfig) },
-		"shadowsocks": func() interface{} { return new(ShadowsocksClientConfig) },
-		"socks":       func() interface{} { return new(SocksClientConfig) },
-		"vless":       func() interface{} { return new(VLessOutboundConfig) },
-		"dns":         func() interface{} { return new(DNSOutboundConfig) },
+		"blackhole":   func() any { return new(BlackholeConfig) },
+		"loopback":    func() any { return new(LoopbackConfig) },
+		"freedom":     func() any { return new(FreedomConfig) },
+		"http":        func() any { return new(HTTPClientConfig) },
+		"shadowsocks": func() any { return new(ShadowsocksClientConfig) },
+		"socks":       func() any { return new(SocksClientConfig) },
+		"vless":       func() any { return new(VLessOutboundConfig) },
+		"dns":         func() any { return new(DNSOutboundConfig) },
 	}, "protocol", "settings")
 
 	_ = log.New(os.Stderr, "xctl> ", 0)

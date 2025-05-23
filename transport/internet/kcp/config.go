@@ -100,7 +100,7 @@ func (c *Config) GetReceivingBufferSize() uint32 {
 }
 
 func init() {
-	common.Must(internet.RegisterProtocolConfigCreator(protocolName, func() interface{} {
+	common.Must(internet.RegisterProtocolConfigCreator(protocolName, func() any {
 		return new(Config)
 	}))
 }

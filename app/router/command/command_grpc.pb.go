@@ -175,7 +175,7 @@ func RegisterRoutingServiceServer(s grpc.ServiceRegistrar, srv RoutingServiceSer
 	s.RegisterService(&RoutingService_ServiceDesc, srv)
 }
 
-func _RoutingService_SubscribeRoutingStats_Handler(srv interface{}, stream grpc.ServerStream) error {
+func _RoutingService_SubscribeRoutingStats_Handler(srv any, stream grpc.ServerStream) error {
 	m := new(SubscribeRoutingStatsRequest)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
@@ -186,7 +186,7 @@ func _RoutingService_SubscribeRoutingStats_Handler(srv interface{}, stream grpc.
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type RoutingService_SubscribeRoutingStatsServer = grpc.ServerStreamingServer[RoutingContext]
 
-func _RoutingService_TestRoute_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _RoutingService_TestRoute_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(TestRouteRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -198,13 +198,13 @@ func _RoutingService_TestRoute_Handler(srv interface{}, ctx context.Context, dec
 		Server:     srv,
 		FullMethod: RoutingService_TestRoute_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(RoutingServiceServer).TestRoute(ctx, req.(*TestRouteRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RoutingService_GetBalancerInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _RoutingService_GetBalancerInfo_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(GetBalancerInfoRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -216,13 +216,13 @@ func _RoutingService_GetBalancerInfo_Handler(srv interface{}, ctx context.Contex
 		Server:     srv,
 		FullMethod: RoutingService_GetBalancerInfo_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(RoutingServiceServer).GetBalancerInfo(ctx, req.(*GetBalancerInfoRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RoutingService_OverrideBalancerTarget_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _RoutingService_OverrideBalancerTarget_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(OverrideBalancerTargetRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -234,13 +234,13 @@ func _RoutingService_OverrideBalancerTarget_Handler(srv interface{}, ctx context
 		Server:     srv,
 		FullMethod: RoutingService_OverrideBalancerTarget_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(RoutingServiceServer).OverrideBalancerTarget(ctx, req.(*OverrideBalancerTargetRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RoutingService_AddRule_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _RoutingService_AddRule_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(AddRuleRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -252,13 +252,13 @@ func _RoutingService_AddRule_Handler(srv interface{}, ctx context.Context, dec f
 		Server:     srv,
 		FullMethod: RoutingService_AddRule_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(RoutingServiceServer).AddRule(ctx, req.(*AddRuleRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RoutingService_RemoveRule_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _RoutingService_RemoveRule_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(RemoveRuleRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -270,7 +270,7 @@ func _RoutingService_RemoveRule_Handler(srv interface{}, ctx context.Context, de
 		Server:     srv,
 		FullMethod: RoutingService_RemoveRule_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(RoutingServiceServer).RemoveRule(ctx, req.(*RemoveRuleRequest))
 	}
 	return interceptor(ctx, in, info, handler)
