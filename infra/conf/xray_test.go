@@ -18,7 +18,6 @@ import (
 	. "github.com/xtls/xray-core/infra/conf"
 	"github.com/xtls/xray-core/transport/internet"
 	"github.com/xtls/xray-core/transport/internet/tls"
-	"github.com/xtls/xray-core/transport/internet/websocket"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -132,9 +131,6 @@ func TestXrayConfig(t *testing.T) {
 								TransportSettings: []*internet.TransportConfig{
 									{
 										ProtocolName: "websocket",
-										Settings: serial.ToTypedMessage(&websocket.Config{
-											Host: "example.domain",
-										}),
 									},
 								},
 								SecurityType: "xray.transport.internet.tls.Config",
