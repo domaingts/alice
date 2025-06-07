@@ -48,7 +48,7 @@ func (r *resolution) callbackResolution(allFeatures []features.Feature) error {
 	callback := reflect.ValueOf(r.callback)
 	var input []reflect.Value
 	callbackType := callback.Type()
-	for i := 0; i < callbackType.NumIn(); i++ {
+	for i := range callbackType.NumIn() {
 		pt := callbackType.In(i)
 		for _, f := range allFeatures {
 			if reflect.TypeOf(f).AssignableTo(pt) {
@@ -278,7 +278,7 @@ func (s *Instance) RequireFeatures(callback any, optional bool) error {
 	}
 
 	var featureTypes []reflect.Type
-	for i := 0; i < callbackType.NumIn(); i++ {
+	for i := range callbackType.NumIn() {
 		featureTypes = append(featureTypes, reflect.PtrTo(callbackType.In(i)))
 	}
 

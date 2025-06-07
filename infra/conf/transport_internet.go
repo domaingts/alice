@@ -746,17 +746,17 @@ func (c *SocketConfig) Build() (*internet.SocketConfig, error) {
 }
 
 type StreamConfig struct {
-	Address             *Address           `json:"address"`
-	Port                uint16             `json:"port"`
-	Network             *TransportProtocol `json:"network"`
-	Security            string             `json:"security"`
-	TLSSettings         *TLSConfig         `json:"tlsSettings"`
-	REALITYSettings     *REALITYConfig     `json:"realitySettings"`
-	TCPSettings         *TCPConfig         `json:"tcpSettings"`
-	SplitHTTPSettings   *SplitHTTPConfig   `json:"splithttpSettings"`
-	KCPSettings         *KCPConfig         `json:"kcpSettings"`
-	GRPCSettings        *GRPCConfig        `json:"grpcSettings"`
-	SocketSettings      *SocketConfig      `json:"sockopt"`
+	Address           *Address           `json:"address"`
+	Port              uint16             `json:"port"`
+	Network           *TransportProtocol `json:"network"`
+	Security          string             `json:"security"`
+	TLSSettings       *TLSConfig         `json:"tlsSettings"`
+	REALITYSettings   *REALITYConfig     `json:"realitySettings"`
+	TCPSettings       *TCPConfig         `json:"tcpSettings"`
+	SplitHTTPSettings *SplitHTTPConfig   `json:"splithttpSettings"`
+	KCPSettings       *KCPConfig         `json:"kcpSettings"`
+	GRPCSettings      *GRPCConfig        `json:"grpcSettings"`
+	SocketSettings    *SocketConfig      `json:"sockopt"`
 }
 
 // Build implements Buildable.
