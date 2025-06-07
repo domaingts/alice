@@ -6,10 +6,6 @@ import (
 	"github.com/xtls/xray-core/common"
 	. "github.com/xtls/xray-core/transport/internet"
 	"github.com/xtls/xray-core/transport/internet/headers/noop"
-	"github.com/xtls/xray-core/transport/internet/headers/srtp"
-	"github.com/xtls/xray-core/transport/internet/headers/utp"
-	"github.com/xtls/xray-core/transport/internet/headers/wechat"
-	"github.com/xtls/xray-core/transport/internet/headers/wireguard"
 )
 
 func TestAllHeadersLoadable(t *testing.T) {
@@ -20,22 +16,6 @@ func TestAllHeadersLoadable(t *testing.T) {
 		{
 			Input: new(noop.Config),
 			Size:  0,
-		},
-		{
-			Input: new(srtp.Config),
-			Size:  4,
-		},
-		{
-			Input: new(utp.Config),
-			Size:  4,
-		},
-		{
-			Input: new(wechat.VideoConfig),
-			Size:  13,
-		},
-		{
-			Input: new(wireguard.WireguardConfig),
-			Size:  4,
 		},
 	}
 
