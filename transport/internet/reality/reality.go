@@ -205,7 +205,7 @@ func UClient(c net.Conn, config *Config, ctx context.Context, dest net.Destinati
 				if !first {
 					times = int(crypto.RandBetween(config.SpiderY[4], config.SpiderY[5]))
 				}
-				for j := 0; j < times; j++ {
+				for j := range times {
 					if !first && j == 0 {
 						req.Header.Set("Referer", firstURL)
 					}

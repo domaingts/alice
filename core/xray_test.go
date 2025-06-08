@@ -55,9 +55,7 @@ func TestXrayClose(t *testing.T) {
 				}),
 			},
 		},
-		Outbound: []*OutboundHandlerConfig{
-			{},
-		},
+		Outbound: []*OutboundHandlerConfig{},
 	}
 
 	cfgBytes, err := proto.Marshal(config)

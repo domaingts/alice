@@ -48,7 +48,7 @@ func (r *resolution) callbackResolution(allFeatures []features.Feature) error {
 	callback := reflect.ValueOf(r.callback)
 	var input []reflect.Value
 	callbackType := callback.Type()
-	for i := range callbackType.NumIn() {
+	for i := 0; i < callbackType.NumIn(); i++ {
 		pt := callbackType.In(i)
 		for _, f := range allFeatures {
 			if reflect.TypeOf(f).AssignableTo(pt) {
@@ -88,6 +88,11 @@ type Instance struct {
 	resolveLock                sync.Mutex
 
 	ctx context.Context
+}
+
+// Instance state
+func (server *Instance) IsRunning() bool {
+	return server.running
 }
 
 func AddInboundHandler(server *Instance, config *InboundHandlerConfig) error {
@@ -278,7 +283,7 @@ func (s *Instance) RequireFeatures(callback any, optional bool) error {
 	}
 
 	var featureTypes []reflect.Type
-	for i := range callbackType.NumIn() {
+	for i := 0; i < callbackType.NumIn(); i++ {
 		featureTypes = append(featureTypes, reflect.PtrTo(callbackType.In(i)))
 	}
 

@@ -62,7 +62,7 @@ func RegisterConfigLoader(format *ConfigFormat) error {
 
 func GetMergedConfig(args cmdarg.Arg) (string, error) {
 	var files []*ConfigSource
-	supported := []string{"json"}
+	supported := []string{"json", "yaml", "toml"}
 	for _, file := range args {
 		format := getFormat(file)
 		if slices.Contains(supported, format) {
