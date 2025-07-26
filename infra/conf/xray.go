@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -37,6 +39,8 @@ var (
 		"vless":       func() any { return new(VLessOutboundConfig) },
 		"dns":         func() any { return new(DNSOutboundConfig) },
 	}, "protocol", "settings")
+
+	ctllog = log.New(os.Stderr, "xctl> ", 0)
 )
 
 type SniffingConfig struct {

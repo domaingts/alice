@@ -321,6 +321,12 @@ func (c *TLSConfig) Build() (proto.Message, error) {
 	return config, nil
 }
 
+type LimitFallback struct {
+	AfterBytes       uint64
+	BytesPerSec      uint64
+	BurstBytesPerSec uint64
+}
+
 type REALITYConfig struct {
 	MasterKeyLog string          `json:"masterKeyLog"`
 	Show         bool            `json:"show"`
@@ -334,13 +340,18 @@ type REALITYConfig struct {
 	MaxClientVer string          `json:"maxClientVer"`
 	MaxTimeDiff  uint64          `json:"maxTimeDiff"`
 	ShortIds     []string        `json:"shortIds"`
+	Mldsa65Seed  string          `json:"mldsa65Seed"`
 
-	Fingerprint string `json:"fingerprint"`
-	ServerName  string `json:"serverName"`
-	Password    string `json:"password"`
-	PublicKey   string `json:"publicKey"`
-	ShortId     string `json:"shortId"`
-	SpiderX     string `json:"spiderX"`
+	LimitFallbackUpload   LimitFallback `json:"limitFallbackUpload"`
+	LimitFallbackDownload LimitFallback `json:"limitFallbackDownload"`
+
+	Fingerprint   string `json:"fingerprint"`
+	ServerName    string `json:"serverName"`
+	Password      string `json:"password"`
+	PublicKey     string `json:"publicKey"`
+	ShortId       string `json:"shortId"`
+	Mldsa65Verify string `json:"mldsa65Verify"`
+	SpiderX       string `json:"spiderX"`
 }
 
 func (c *REALITYConfig) Build() (proto.Message, error) {
@@ -370,7 +381,7 @@ func (c *REALITYConfig) Build() (proto.Message, error) {
 				}
 			default:
 				if _, err = strconv.Atoi(s); err == nil {
-					s = "127.0.0.1:" + s
+					s = "localhost:" + s
 				}
 				if _, _, err = net.SplitHostPort(s); err == nil {
 					c.Type = "tcp"
@@ -435,6 +446,21 @@ func (c *REALITYConfig) Build() (proto.Message, error) {
 		config.Xver = c.Xver
 		config.ServerNames = c.ServerNames
 		config.MaxTimeDiff = c.MaxTimeDiff
+
+		if c.Mldsa65Seed != "" {
+			if config.Mldsa65Seed, err = base64.RawURLEncoding.DecodeString(c.Mldsa65Seed); err != nil || len(config.Mldsa65Seed) != 32 {
+				return nil, errors.New(`invalid "mldsa65Seed": `, c.Mldsa65Seed)
+			}
+		}
+
+		config.LimitFallbackUpload = new(reality.LimitFallback)
+		config.LimitFallbackUpload.AfterBytes = c.LimitFallbackUpload.AfterBytes
+		config.LimitFallbackUpload.BytesPerSec = c.LimitFallbackUpload.BytesPerSec
+		config.LimitFallbackUpload.BurstBytesPerSec = c.LimitFallbackUpload.BurstBytesPerSec
+		config.LimitFallbackDownload = new(reality.LimitFallback)
+		config.LimitFallbackDownload.AfterBytes = c.LimitFallbackDownload.AfterBytes
+		config.LimitFallbackDownload.BytesPerSec = c.LimitFallbackDownload.BytesPerSec
+		config.LimitFallbackDownload.BurstBytesPerSec = c.LimitFallbackDownload.BurstBytesPerSec
 	} else {
 		config.Fingerprint = strings.ToLower(c.Fingerprint)
 		if config.Fingerprint == "unsafe" || config.Fingerprint == "hellogolang" {
@@ -461,6 +487,11 @@ func (c *REALITYConfig) Build() (proto.Message, error) {
 		config.ShortId = make([]byte, 8)
 		if _, err = hex.Decode(config.ShortId, []byte(c.ShortId)); err != nil {
 			return nil, errors.New(`invalid "shortId": `, c.ShortId)
+		}
+		if c.Mldsa65Verify != "" {
+			if config.Mldsa65Verify, err = base64.RawURLEncoding.DecodeString(c.Mldsa65Verify); err != nil || len(config.Mldsa65Verify) != 1952 {
+				return nil, errors.New(`invalid "mldsa65Verify": `, c.Mldsa65Verify)
+			}
 		}
 		if c.SpiderX == "" {
 			c.SpiderX = "/"
