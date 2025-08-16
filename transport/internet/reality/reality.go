@@ -231,7 +231,7 @@ func UClient(c net.Conn, config *Config, ctx context.Context, dest net.Destinati
 				if !first {
 					times = int(crypto.RandBetween(config.SpiderY[4], config.SpiderY[5]))
 				}
-				for j := 0; j < times; j++ {
+				for j := range times {
 					if !first && j == 0 {
 						req.Header.Set("Referer", firstURL)
 					}
@@ -265,7 +265,7 @@ func UClient(c net.Conn, config *Config, ctx context.Context, dest net.Destinati
 			}
 			get(true)
 			concurrency := int(crypto.RandBetween(config.SpiderY[2], config.SpiderY[3]))
-			for i := 0; i < concurrency; i++ {
+			for range concurrency {
 				go get(false)
 			}
 			// Do not close the connection

@@ -365,7 +365,7 @@ func (h *Handler) Process(ctx context.Context, network net.Network, connection s
 						ipType = 0
 					}
 					if ipType == 4 {
-						for i := 0; i < len(remoteAddr); i++ {
+						for i := range len(remoteAddr) {
 							if remoteAddr[i] == ':' {
 								ipType = 6
 								break

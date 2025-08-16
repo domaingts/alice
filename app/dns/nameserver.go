@@ -115,7 +115,7 @@ func NewClient(
 			// Related issues:
 			// https://github.com/v2fly/v2ray-core/issues/529
 			// https://github.com/v2fly/v2ray-core/issues/719
-			for i := 0; i < len(localTLDsAndDotlessDomains); i++ {
+			for range len(localTLDsAndDotlessDomains) {
 				*matcherInfos = append(*matcherInfos, &DomainMatcherInfo{
 					clientIdx:     uint16(0),
 					domainRuleIdx: uint16(0),
