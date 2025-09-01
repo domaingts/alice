@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	gotls "crypto/tls"
+	"encoding/base64"
 	"io"
 	"reflect"
 	"strconv"
@@ -29,6 +30,7 @@ import (
 	"github.com/xtls/xray-core/proxy"
 	"github.com/xtls/xray-core/proxy/vless"
 	"github.com/xtls/xray-core/proxy/vless/encoding"
+	"github.com/xtls/xray-core/proxy/vless/encryption"
 	"github.com/xtls/xray-core/transport/internet/reality"
 	"github.com/xtls/xray-core/transport/internet/stat"
 	"github.com/xtls/xray-core/transport/internet/tls"
@@ -67,6 +69,7 @@ type Handler struct {
 	policyManager         policy.Manager
 	validator             vless.Validator
 	dns                   dns.Client
+	decryption            *encryption.ServerInstance
 	fallbacks             map[string]map[string]map[string]*Fallback // or nil
 	// regexps               map[string]*regexp.Regexp       // or nil
 }
@@ -79,6 +82,19 @@ func New(ctx context.Context, config *Config, dc dns.Client, validator vless.Val
 		policyManager:         v.GetFeature(policy.ManagerType()).(policy.Manager),
 		dns:                   dc,
 		validator:             validator,
+	}
+
+	if config.Decryption != "" && config.Decryption != "none" {
+		s := strings.Split(config.Decryption, ".")
+		var nfsSKeysBytes [][]byte
+		for _, r := range s {
+			b, _ := base64.RawURLEncoding.DecodeString(r)
+			nfsSKeysBytes = append(nfsSKeysBytes, b)
+		}
+		handler.decryption = &encryption.ServerInstance{}
+		if err := handler.decryption.Init(nfsSKeysBytes, config.XorMode, config.Seconds, config.Padding); err != nil {
+			return nil, errors.New("failed to use decryption").Base(err).AtError()
+		}
 	}
 
 	if config.Fallbacks != nil {
@@ -159,6 +175,9 @@ func isMuxAndNotXUDP(request *protocol.RequestHeader, first *buf.Buffer) bool {
 
 // Close implements common.Closable.Close().
 func (h *Handler) Close() error {
+	if h.decryption != nil {
+		h.decryption.Close()
+	}
 	return errors.Combine(common.Close(h.validator))
 }
 
@@ -199,6 +218,13 @@ func (h *Handler) Process(ctx context.Context, network net.Network, connection s
 		iConn = statConn.Connection
 	}
 
+	if h.decryption != nil {
+		var err error
+		if connection, err = h.decryption.Handshake(connection, nil); err != nil {
+			return errors.New("ML-KEM-768 handshake failed").Base(err).AtInfo()
+		}
+	}
+
 	sessionPolicy := h.policyManager.ForLevel(0)
 	if err := connection.SetReadDeadline(time.Now().Add(sessionPolicy.Timeouts.Handshake)); err != nil {
 		return errors.New("unable to set read deadline").Base(err).AtWarning()
@@ -217,6 +243,7 @@ func (h *Handler) Process(ctx context.Context, network net.Network, connection s
 		Buffer: buf.MultiBuffer{first},
 	}
 
+	var userSentID []byte // not MemoryAccount.ID
 	var request *protocol.RequestHeader
 	var requestAddons *encoding.Addons
 	var err error
@@ -227,7 +254,7 @@ func (h *Handler) Process(ctx context.Context, network net.Network, connection s
 	if isfb && firstLen < 18 {
 		err = errors.New("fallback directly")
 	} else {
-		request, requestAddons, isfb, err = encoding.DecodeRequestHeader(isfb, first, reader, h.validator)
+		userSentID, request, requestAddons, isfb, err = encoding.DecodeRequestHeader(isfb, first, reader, h.validator)
 	}
 
 	if err != nil {
@@ -365,7 +392,7 @@ func (h *Handler) Process(ctx context.Context, network net.Network, connection s
 						ipType = 0
 					}
 					if ipType == 4 {
-						for i := range len(remoteAddr) {
+						for i := 0; i < len(remoteAddr); i++ {
 							if remoteAddr[i] == ':' {
 								ipType = 6
 								break
@@ -455,6 +482,7 @@ func (h *Handler) Process(ctx context.Context, network net.Network, connection s
 	}
 	inbound.Name = "vless"
 	inbound.User = request.User
+	inbound.VlessRoute = net.PortFromBytes(userSentID[6:8])
 
 	account := request.User.Account.(*vless.MemoryAccount)
 
@@ -476,7 +504,13 @@ func (h *Handler) Process(ctx context.Context, network net.Network, connection s
 			case protocol.RequestCommandTCP:
 				var t reflect.Type
 				var p uintptr
-				if tlsConn, ok := iConn.(*tls.Conn); ok {
+				if commonConn, ok := connection.(*encryption.CommonConn); ok {
+					if _, ok := commonConn.Conn.(*encryption.XorConn); ok || !proxy.IsRAWTransport(iConn) {
+						inbound.CanSpliceCopy = 3 // full-random xorConn / non-RAW transport can not use Linux Splice
+					}
+					t = reflect.TypeOf(commonConn).Elem()
+					p = uintptr(unsafe.Pointer(commonConn))
+				} else if tlsConn, ok := iConn.(*tls.Conn); ok {
 					if tlsConn.ConnectionState().Version != gotls.VersionTLS13 {
 						return errors.New(`failed to use `+requestAddons.Flow+`, found outer tls version `, tlsConn.ConnectionState().Version).AtWarning()
 					}
@@ -530,7 +564,7 @@ func (h *Handler) Process(ctx context.Context, network net.Network, connection s
 
 	serverReader := link.Reader // .(*pipe.Reader)
 	serverWriter := link.Writer // .(*pipe.Writer)
-	trafficState := proxy.NewTrafficState(account.ID.Bytes())
+	trafficState := proxy.NewTrafficState(userSentID)
 	postRequest := func() error {
 		defer timer.SetTimeout(sessionPolicy.Timeouts.DownlinkOnly)
 

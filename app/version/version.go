@@ -50,7 +50,7 @@ func compareVersions(v1, v2 string) (int, error) {
 	}
 
 	// Compare each part
-	for i := range len(v1Parts) {
+	for i := 0; i < len(v1Parts); i++ {
 		// Convert parts to integers
 		n1, err := strconv.Atoi(v1Parts[i])
 		if err != nil {

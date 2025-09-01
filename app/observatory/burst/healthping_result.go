@@ -58,7 +58,7 @@ func (h *HealthPingRTTS) GetWithCache() *HealthPingStats {
 func (h *HealthPingRTTS) Put(d time.Duration) {
 	if h.rtts == nil {
 		h.rtts = make([]*pingRTT, h.cap)
-		for i := range h.cap {
+		for i := 0; i < h.cap; i++ {
 			h.rtts[i] = &pingRTT{}
 		}
 		h.idx = -1

@@ -3,8 +3,6 @@ package reality
 import (
 	"bytes"
 	"context"
-	"crypto/aes"
-	"crypto/cipher"
 	"crypto/ecdh"
 	"crypto/ed25519"
 	"crypto/hmac"
@@ -169,8 +167,7 @@ func UClient(c net.Conn, config *Config, ctx context.Context, dest net.Destinati
 		if _, err := hkdf.New(sha256.New, uConn.AuthKey, hello.Random[:20], []byte("REALITY")).Read(uConn.AuthKey); err != nil {
 			return nil, err
 		}
-		block, _ := aes.NewCipher(uConn.AuthKey)
-		aead, _ := cipher.NewGCM(block)
+		aead := crypto.NewAesGcm(uConn.AuthKey)
 		if config.Show {
 			fmt.Printf("REALITY localAddr: %v\tuConn.AuthKey[:16]: %v\tAEAD: %T\n", localAddr, uConn.AuthKey[:16], aead)
 		}
@@ -231,7 +228,7 @@ func UClient(c net.Conn, config *Config, ctx context.Context, dest net.Destinati
 				if !first {
 					times = int(crypto.RandBetween(config.SpiderY[4], config.SpiderY[5]))
 				}
-				for j := range times {
+				for j := 0; j < times; j++ {
 					if !first && j == 0 {
 						req.Header.Set("Referer", firstURL)
 					}
@@ -265,7 +262,7 @@ func UClient(c net.Conn, config *Config, ctx context.Context, dest net.Destinati
 			}
 			get(true)
 			concurrency := int(crypto.RandBetween(config.SpiderY[2], config.SpiderY[3]))
-			for range concurrency {
+			for i := 0; i < concurrency; i++ {
 				go get(false)
 			}
 			// Do not close the connection

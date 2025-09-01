@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"context"
 	gotls "crypto/tls"
+	"encoding/base64"
 	"reflect"
+	"strings"
 	"time"
 	"unsafe"
 
@@ -24,6 +26,7 @@ import (
 	"github.com/xtls/xray-core/proxy"
 	"github.com/xtls/xray-core/proxy/vless"
 	"github.com/xtls/xray-core/proxy/vless/encoding"
+	"github.com/xtls/xray-core/proxy/vless/encryption"
 	"github.com/xtls/xray-core/transport"
 	"github.com/xtls/xray-core/transport/internet"
 	"github.com/xtls/xray-core/transport/internet/reality"
@@ -43,6 +46,7 @@ type Handler struct {
 	serverPicker  protocol.ServerPicker
 	policyManager policy.Manager
 	cone          bool
+	encryption    *encryption.ClientInstance
 }
 
 // New creates a new VLess outbound handler.
@@ -62,6 +66,20 @@ func New(ctx context.Context, config *Config) (*Handler, error) {
 		serverPicker:  protocol.NewRoundRobinServerPicker(serverList),
 		policyManager: v.GetFeature(policy.ManagerType()).(policy.Manager),
 		cone:          ctx.Value("cone").(bool),
+	}
+
+	a := handler.serverPicker.PickServer().PickUser().Account.(*vless.MemoryAccount)
+	if a.Encryption != "" && a.Encryption != "none" {
+		s := strings.Split(a.Encryption, ".")
+		var nfsPKeysBytes [][]byte
+		for _, r := range s {
+			b, _ := base64.RawURLEncoding.DecodeString(r)
+			nfsPKeysBytes = append(nfsPKeysBytes, b)
+		}
+		handler.encryption = &encryption.ClientInstance{}
+		if err := handler.encryption.Init(nfsPKeysBytes, a.XorMode, a.Seconds, a.Padding); err != nil {
+			return nil, errors.New("failed to use encryption").Base(err).AtError()
+		}
 	}
 
 	return handler, nil
@@ -97,6 +115,13 @@ func (h *Handler) Process(ctx context.Context, link *transport.Link, dialer inte
 	}
 	target := ob.Target
 	errors.LogInfo(ctx, "tunneling request to ", target, " via ", rec.Destination().NetAddr())
+
+	if h.encryption != nil {
+		var err error
+		if conn, err = h.encryption.Handshake(conn); err != nil {
+			return errors.New("ML-KEM-768 handshake failed").Base(err).AtInfo()
+		}
+	}
 
 	command := protocol.RequestCommandTCP
 	if target.Network == net.Network_UDP {
@@ -140,7 +165,13 @@ func (h *Handler) Process(ctx context.Context, link *transport.Link, dialer inte
 		case protocol.RequestCommandTCP:
 			var t reflect.Type
 			var p uintptr
-			if tlsConn, ok := iConn.(*tls.Conn); ok {
+			if commonConn, ok := conn.(*encryption.CommonConn); ok {
+				if _, ok := commonConn.Conn.(*encryption.XorConn); ok || !proxy.IsRAWTransport(iConn) {
+					ob.CanSpliceCopy = 3 // full-random xorConn / non-RAW transport can not use Linux Splice
+				}
+				t = reflect.TypeOf(commonConn).Elem()
+				p = uintptr(unsafe.Pointer(commonConn))
+			} else if tlsConn, ok := iConn.(*tls.Conn); ok {
 				t = reflect.TypeOf(tlsConn.Conn).Elem()
 				p = uintptr(unsafe.Pointer(tlsConn.Conn))
 			} else if utlsConn, ok := iConn.(*tls.UConn); ok {
