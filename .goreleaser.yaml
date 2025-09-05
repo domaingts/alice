@@ -5,6 +5,7 @@ version: 2
 builds:
   - id: main
     env:
+      - GOEXPERIMENT=greenteagc,jsonv2
       - CGO_ENABLED=0
     flags:
       - -v
