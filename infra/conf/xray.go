@@ -23,7 +23,6 @@ var (
 	inboundConfigLoader = NewJSONConfigLoader(ConfigCreatorCache{
 		"tunnel":        func() any { return new(DokodemoConfig) },
 		"dokodemo-door": func() any { return new(DokodemoConfig) },
-		"http":          func() any { return new(HTTPServerConfig) },
 		"shadowsocks":   func() any { return new(ShadowsocksServerConfig) },
 		"mixed":         func() any { return new(SocksServerConfig) },
 		"socks":         func() any { return new(SocksServerConfig) },
@@ -36,7 +35,6 @@ var (
 		"loopback":    func() any { return new(LoopbackConfig) },
 		"direct":      func() any { return new(FreedomConfig) },
 		"freedom":     func() any { return new(FreedomConfig) },
-		"http":        func() any { return new(HTTPClientConfig) },
 		"shadowsocks": func() any { return new(ShadowsocksClientConfig) },
 		"socks":       func() any { return new(SocksClientConfig) },
 		"vless":       func() any { return new(VLessOutboundConfig) },

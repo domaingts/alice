@@ -571,6 +571,12 @@ func (p TransportProtocol) Build() (string, error) {
 	case "grpc":
 		errors.PrintDeprecatedFeatureWarning("gRPC transport (with unnecessary costs, etc.)", "XHTTP stream-up H2")
 		return "grpc", nil
+	case "ws", "websocket":
+		errors.PrintDeprecatedFeatureWarning("WebSocket transport (with ALPN http/1.1, etc.)", "XHTTP H2 & H3")
+		return "websocket", nil
+	case "httpupgrade":
+		errors.PrintDeprecatedFeatureWarning("HTTPUpgrade transport (with ALPN http/1.1, etc.)", "XHTTP H2 & H3")
+		return "httpupgrade", nil
 	case "h2", "h3", "http":
 		return "", errors.PrintRemovedFeatureError("HTTP transport (without header padding, etc.)", "XHTTP stream-one H2 & H3")
 	case "quic":
@@ -764,7 +770,6 @@ type StreamConfig struct {
 	REALITYSettings   *REALITYConfig     `json:"realitySettings"`
 	TCPSettings       *TCPConfig         `json:"tcpSettings"`
 	SplitHTTPSettings *SplitHTTPConfig   `json:"splithttpSettings"`
-	GRPCSettings      *GRPCConfig        `json:"grpcSettings"`
 	SocketSettings    *SocketConfig      `json:"sockopt"`
 }
 
@@ -835,16 +840,6 @@ func (c *StreamConfig) Build() (*internet.StreamConfig, error) {
 		config.TransportSettings = append(config.TransportSettings, &internet.TransportConfig{
 			ProtocolName: "splithttp",
 			Settings:     serial.ToTypedMessage(hs),
-		})
-	}
-	if c.GRPCSettings != nil {
-		gs, err := c.GRPCSettings.Build()
-		if err != nil {
-			return nil, errors.New("Failed to build gRPC config.").Base(err)
-		}
-		config.TransportSettings = append(config.TransportSettings, &internet.TransportConfig{
-			ProtocolName: "grpc",
-			Settings:     serial.ToTypedMessage(gs),
 		})
 	}
 	if c.SocketSettings != nil {
