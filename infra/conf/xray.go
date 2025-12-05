@@ -3,7 +3,6 @@ package conf
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"log"
 	"os"
 	"path/filepath"
@@ -23,6 +22,7 @@ var (
 	inboundConfigLoader = NewJSONConfigLoader(ConfigCreatorCache{
 		"tunnel":        func() any { return new(DokodemoConfig) },
 		"dokodemo-door": func() any { return new(DokodemoConfig) },
+		"shadowsocks":   func() any { return new(ShadowsocksServerConfig) },
 		"mixed":         func() any { return new(SocksServerConfig) },
 		"socks":         func() any { return new(SocksServerConfig) },
 		"vless":         func() any { return new(VLessInboundConfig) },
@@ -34,6 +34,7 @@ var (
 		"loopback":    func() any { return new(LoopbackConfig) },
 		"direct":      func() any { return new(FreedomConfig) },
 		"freedom":     func() any { return new(FreedomConfig) },
+		"shadowsocks": func() any { return new(ShadowsocksClientConfig) },
 		"socks":       func() any { return new(SocksClientConfig) },
 		"vless":       func() any { return new(VLessOutboundConfig) },
 		"dns":         func() any { return new(DNSOutboundConfig) },
@@ -110,49 +111,14 @@ func (m *MuxConfig) Build() (*proxyman.MultiplexingConfig, error) {
 	}, nil
 }
 
-type InboundDetourAllocationConfig struct {
-	Strategy    string  `json:"strategy"`
-	Concurrency *uint32 `json:"concurrency"`
-	RefreshMin  *uint32 `json:"refresh"`
-}
-
-// Build implements Buildable.
-func (c *InboundDetourAllocationConfig) Build() (*proxyman.AllocationStrategy, error) {
-	config := new(proxyman.AllocationStrategy)
-	switch strings.ToLower(c.Strategy) {
-	case "always":
-		config.Type = proxyman.AllocationStrategy_Always
-	case "random":
-		config.Type = proxyman.AllocationStrategy_Random
-	case "external":
-		config.Type = proxyman.AllocationStrategy_External
-	default:
-		return nil, errors.New("unknown allocation strategy: ", c.Strategy)
-	}
-	if c.Concurrency != nil {
-		config.Concurrency = &proxyman.AllocationStrategy_AllocationStrategyConcurrency{
-			Value: *c.Concurrency,
-		}
-	}
-
-	if c.RefreshMin != nil {
-		config.Refresh = &proxyman.AllocationStrategy_AllocationStrategyRefresh{
-			Value: *c.RefreshMin,
-		}
-	}
-
-	return config, nil
-}
-
 type InboundDetourConfig struct {
-	Protocol       string                         `json:"protocol"`
-	PortList       *PortList                      `json:"port"`
-	ListenOn       *Address                       `json:"listen"`
-	Settings       *json.RawMessage               `json:"settings"`
-	Tag            string                         `json:"tag"`
-	Allocation     *InboundDetourAllocationConfig `json:"allocate"`
-	StreamSetting  *StreamConfig                  `json:"streamSettings"`
-	SniffingConfig *SniffingConfig                `json:"sniffing"`
+	Protocol       string           `json:"protocol"`
+	PortList       *PortList        `json:"port"`
+	ListenOn       *Address         `json:"listen"`
+	Settings       *json.RawMessage `json:"settings"`
+	Tag            string           `json:"tag"`
+	StreamSetting  *StreamConfig    `json:"streamSettings"`
+	SniffingConfig *SniffingConfig  `json:"sniffing"`
 }
 
 // Build implements Buildable.
@@ -187,30 +153,6 @@ func (c *InboundDetourConfig) Build() (*core.InboundHandlerConfig, error) {
 		}
 	}
 
-	if c.Allocation != nil {
-		concurrency := -1
-		if c.Allocation.Concurrency != nil && c.Allocation.Strategy == "random" {
-			concurrency = int(*c.Allocation.Concurrency)
-		}
-		portRange := 0
-
-		for _, pr := range c.PortList.Range {
-			portRange += int(pr.To - pr.From + 1)
-		}
-		if concurrency >= 0 && concurrency >= portRange {
-			var ports strings.Builder
-			for _, pr := range c.PortList.Range {
-				fmt.Fprintf(&ports, "%d-%d ", pr.From, pr.To)
-			}
-			return nil, errors.New("not enough ports. concurrency = ", concurrency, " ports: ", ports.String())
-		}
-
-		as, err := c.Allocation.Build()
-		if err != nil {
-			return nil, err
-		}
-		receiverSettings.AllocationStrategy = as
-	}
 	if c.StreamSetting != nil {
 		ss, err := c.StreamSetting.Build()
 		if err != nil {

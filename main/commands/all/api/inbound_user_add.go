@@ -12,6 +12,8 @@ import (
 	"github.com/xtls/xray-core/core"
 	"github.com/xtls/xray-core/infra/conf"
 	"github.com/xtls/xray-core/infra/conf/serial"
+	"github.com/xtls/xray-core/proxy/shadowsocks"
+	"github.com/xtls/xray-core/proxy/shadowsocks_2022"
 	vlessin "github.com/xtls/xray-core/proxy/vless/inbound"
 
 	"github.com/xtls/xray-core/main/commands/base"
@@ -75,6 +77,10 @@ func extractInboundUsers(inb *core.InboundHandlerConfig) []*protocol.User {
 	switch ty := inst.(type) {
 	case *vlessin.Config:
 		return ty.Clients
+	case *shadowsocks.ServerConfig:
+		return ty.Users
+	case *shadowsocks_2022.MultiUserServerConfig:
+		return ty.Users
 	default:
 		fmt.Println("unsupported inbound type")
 	}

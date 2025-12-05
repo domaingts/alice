@@ -20,6 +20,7 @@ type NoOpConnectionAuthenticator struct{}
 func (NoOpConnectionAuthenticator) Build() (proto.Message, error) {
 	return new(noop.ConnectionConfig), nil
 }
+
 type AuthenticatorRequest struct {
 	Version string                 `json:"version"`
 	Method  string                 `json:"method"`

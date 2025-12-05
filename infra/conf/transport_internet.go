@@ -124,8 +124,8 @@ func (c *SplitHTTPConfig) Build() (proto.Message, error) {
 		return nil, errors.New("maxConnections cannot be specified together with maxConcurrency")
 	}
 	if c.Xmux == (XmuxConfig{}) {
-		c.Xmux.MaxConcurrency.From = 16
-		c.Xmux.MaxConcurrency.To = 32
+		c.Xmux.MaxConcurrency.From = 1
+		c.Xmux.MaxConcurrency.To = 1
 		c.Xmux.HMaxRequestTimes.From = 600
 		c.Xmux.HMaxRequestTimes.To = 900
 		c.Xmux.HMaxReusableSecs.From = 1800
@@ -463,6 +463,9 @@ func (c *REALITYConfig) Build() (proto.Message, error) {
 		}
 		config.ShortIds = make([][]byte, len(c.ShortIds))
 		for i, s := range c.ShortIds {
+			if len(s) > 16 {
+				return nil, errors.New(`too long "shortIds[`, i, `]": `, s)
+			}
 			config.ShortIds[i] = make([]byte, 8)
 			if _, err = hex.Decode(config.ShortIds[i], []byte(s)); err != nil {
 				return nil, errors.New(`invalid "shortIds[`, i, `]": `, s)
@@ -513,6 +516,9 @@ func (c *REALITYConfig) Build() (proto.Message, error) {
 		}
 		if len(c.ShortIds) != 0 {
 			return nil, errors.New(`non-empty "shortIds", please use "shortId" instead`)
+		}
+		if len(c.ShortIds) > 16 {
+			return nil, errors.New(`too long "shortId": `, c.ShortId)
 		}
 		config.ShortId = make([]byte, 8)
 		if _, err = hex.Decode(config.ShortId, []byte(c.ShortId)); err != nil {
@@ -639,6 +645,7 @@ type SocketConfig struct {
 	CustomSockopt         []*CustomSockoptConfig `json:"customSockopt"`
 	AddressPortStrategy   string                 `json:"addressPortStrategy"`
 	HappyEyeballsSettings *HappyEyeballsConfig   `json:"happyEyeballs"`
+	TrustedXForwardedFor  []string               `json:"trustedXForwardedFor"`
 }
 
 // Build implements Buildable.
@@ -758,6 +765,7 @@ func (c *SocketConfig) Build() (*internet.SocketConfig, error) {
 		CustomSockopt:        customSockopts,
 		AddressPortStrategy:  addressPortStrategy,
 		HappyEyeballs:        happyEyeballs,
+		TrustedXForwardedFor: c.TrustedXForwardedFor,
 	}, nil
 }
 
@@ -768,7 +776,9 @@ type StreamConfig struct {
 	Security          string             `json:"security"`
 	TLSSettings       *TLSConfig         `json:"tlsSettings"`
 	REALITYSettings   *REALITYConfig     `json:"realitySettings"`
+	RAWSettings       *TCPConfig         `json:"rawSettings"`
 	TCPSettings       *TCPConfig         `json:"tcpSettings"`
+	XHTTPSettings     *SplitHTTPConfig   `json:"xhttpSettings"`
 	SplitHTTPSettings *SplitHTTPConfig   `json:"splithttpSettings"`
 	SocketSettings    *SocketConfig      `json:"sockopt"`
 }
@@ -822,6 +832,9 @@ func (c *StreamConfig) Build() (*internet.StreamConfig, error) {
 	default:
 		return nil, errors.New(`Unknown security "` + c.Security + `".`)
 	}
+	if c.RAWSettings != nil {
+		c.TCPSettings = c.RAWSettings
+	}
 	if c.TCPSettings != nil {
 		ts, err := c.TCPSettings.Build()
 		if err != nil {
@@ -831,6 +844,9 @@ func (c *StreamConfig) Build() (*internet.StreamConfig, error) {
 			ProtocolName: "tcp",
 			Settings:     serial.ToTypedMessage(ts),
 		})
+	}
+	if c.XHTTPSettings != nil {
+		c.SplitHTTPSettings = c.XHTTPSettings
 	}
 	if c.SplitHTTPSettings != nil {
 		hs, err := c.SplitHTTPSettings.Build()
