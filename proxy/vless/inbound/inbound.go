@@ -6,7 +6,6 @@ import (
 	gotls "crypto/tls"
 	"encoding/base64"
 	"io"
-	"reflect"
 	"strconv"
 	"strings"
 	"time"
@@ -383,10 +382,7 @@ func (h *Handler) Process(ctx context.Context, network net.Network, connection s
 					firstBytes := first.Bytes()
 					for i := 4; i <= 8; i++ { // 5 -> 9
 						if firstBytes[i] == '/' && firstBytes[i-1] == ' ' {
-							search := len(firstBytes)
-							if search > 64 {
-								search = 64 // up to about 60
-							}
+							search := min(len(firstBytes), 64) // up to about 60
 							for j := i + 1; j < search; j++ {
 								k := firstBytes[j]
 								if k == '\r' || k == '\n' { // avoid logging \r or \n
@@ -559,30 +555,28 @@ func (h *Handler) Process(ctx context.Context, network net.Network, connection s
 				inbound.CanSpliceCopy = 3
 				fallthrough // we will break Mux connections that contain TCP requests
 			case protocol.RequestCommandTCP:
-				var t reflect.Type
 				var p unsafe.Pointer
+				var i, r uintptr
 				if commonConn, ok := connection.(*encryption.CommonConn); ok {
 					if _, ok := commonConn.Conn.(*encryption.XorConn); ok || !proxy.IsRAWTransportWithoutSecurity(iConn) {
 						inbound.CanSpliceCopy = 3 // full-random xorConn / non-RAW transport / another securityConn should not be penetrated
 					}
-					t = reflect.TypeOf(commonConn).Elem()
+					i, r = encryptionOffsets()
 					p = unsafe.Pointer(commonConn)
+				} else if realityConn, ok := iConn.(*reality.Conn); ok {
+					i, r = realityOffsets()
+					p = unsafe.Pointer(realityConn.Conn)
 				} else if tlsConn, ok := iConn.(*tls.Conn); ok {
 					if tlsConn.ConnectionState().Version != gotls.VersionTLS13 {
 						return errors.New(`failed to use `+requestAddons.Flow+`, found outer tls version `, tlsConn.ConnectionState().Version).AtWarning()
 					}
-					t = reflect.TypeOf(tlsConn.Conn).Elem()
+					i, r = tlsOffsets()
 					p = unsafe.Pointer(tlsConn.Conn)
-				} else if realityConn, ok := iConn.(*reality.Conn); ok {
-					t = reflect.TypeOf(realityConn.Conn).Elem()
-					p = unsafe.Pointer(realityConn.Conn)
 				} else {
 					return errors.New("XTLS only supports TLS and REALITY directly for now.").AtWarning()
 				}
-				i, _ := t.FieldByName("input")
-				r, _ := t.FieldByName("rawInput")
-				input = (*bytes.Reader)(unsafe.Add(p, i.Offset))
-				rawInput = (*bytes.Buffer)(unsafe.Add(p, r.Offset))
+				input = (*bytes.Reader)(unsafe.Add(p, i))
+				rawInput = (*bytes.Buffer)(unsafe.Add(p, r))
 			}
 		} else {
 			return errors.New("account " + account.ID.String() + " is not able to use the flow " + requestAddons.Flow).AtWarning()

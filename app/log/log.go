@@ -2,7 +2,6 @@ package log
 
 import (
 	"context"
-	"fmt"
 	"regexp"
 	"strings"
 	"sync"
@@ -10,6 +9,11 @@ import (
 	"github.com/xtls/xray-core/common"
 	"github.com/xtls/xray-core/common/errors"
 	"github.com/xtls/xray-core/common/log"
+)
+
+var (
+	ipv4Regex = regexp.MustCompile(`(\d{1,3}\.){3}\d{1,3}`)
+	ipv6Regex = regexp.MustCompile(`((?:[\da-fA-F]{0,4}:[\da-fA-F]{0,4}){2,7})(?:[\/\\%](\d{1,3}))?`)
 )
 
 // Instance is a log.Handler that handles logs.
@@ -20,6 +24,8 @@ type Instance struct {
 	errorLogger  log.Handler
 	active       bool
 	dns          bool
+	ipv4Mask     func(string) string
+	ipv6Mask     func(string) string
 }
 
 // New creates a new log.Instance based on the given config.
@@ -29,6 +35,62 @@ func New(ctx context.Context, config *Config) (*Instance, error) {
 		active: false,
 		dns:    config.EnableDnsLog,
 	}
+	g.ipv4Mask = func() func(string) string {
+		switch config.MaskAddress {
+		case "half":
+			return func(ip string) string {
+				dot1 := strings.IndexByte(ip, '.')
+				if dot1 < 0 {
+					return ip
+				}
+				dot2 := strings.IndexByte(ip[dot1+1:], '.')
+				if dot2 < 0 {
+					return ip
+				}
+				return ip[:dot1+dot2+1] + ".*.*"
+			}
+		case "quarter":
+			return func(ip string) string {
+				dot1 := strings.IndexByte(ip, '.')
+				if dot1 > 0 {
+					return ip[:dot1] + ".*.*.*"
+				}
+				return ip
+			}
+		case "full":
+			return func(string) string { return "[Masked IPv4]" }
+		default:
+			return func(ip string) string { return ip }
+		}
+	}()
+	g.ipv6Mask = func() func(string) string {
+		switch config.MaskAddress {
+		case "half":
+			return func(ip string) string {
+				dot1 := strings.IndexByte(ip, ':')
+				if dot1 < 0 {
+					return ip
+				}
+				dot2 := strings.IndexByte(ip[dot1+1:], ':')
+				if dot2 < 0 {
+					return ip
+				}
+				return ip[:dot1+dot2+1] + "::/32"
+			}
+		case "quarter":
+			return func(ip string) string {
+				dot1 := strings.IndexByte(ip, ':')
+				if dot1 > 0 {
+					return ip[:dot1] + "::/16"
+				}
+				return ip
+			}
+		case "full":
+			return func(string) string { return "Masked IPv6" }
+		default:
+			return func(ip string) string { return ip }
+		}
+	}()
 	log.RegisterHandler(g)
 
 	// start logger now,
@@ -104,7 +166,7 @@ func (g *Instance) Handle(msg log.Message) {
 
 	var Msg log.Message
 	if g.config.MaskAddress != "" {
-		Msg = &MaskedMsgWrapper{Message: msg, config: g.config}
+		Msg = &MaskedMsgWrapper{Message: msg, config: g.config, ipv4Mask: g.ipv4Mask, ipv6Mask: g.ipv6Mask}
 	} else {
 		Msg = msg
 	}
@@ -152,49 +214,19 @@ func (g *Instance) Close() error {
 // MaskedMsgWrapper is to wrap the string() method to mask IP addresses in the log.
 type MaskedMsgWrapper struct {
 	log.Message
-	config *Config
+	config   *Config
+	ipv4Mask func(string) string
+	ipv6Mask func(string) string
 }
 
 func (m *MaskedMsgWrapper) String() string {
 	str := m.Message.String()
 
-	ipv4Regex := regexp.MustCompile(`(\d{1,3}\.){3}\d{1,3}`)
-	ipv6Regex := regexp.MustCompile(`((?:[\da-fA-F]{0,4}:[\da-fA-F]{0,4}){2,7})(?:[\/\\%](\d{1,3}))?`)
-
 	// Process ipv4
-	maskedMsg := ipv4Regex.ReplaceAllStringFunc(str, func(ip string) string {
-		parts := strings.Split(ip, ".")
-		switch m.config.MaskAddress {
-		case "half":
-			return fmt.Sprintf("%s.%s.*.*", parts[0], parts[1])
-		case "quarter":
-			return fmt.Sprintf("%s.*.*.*", parts[0])
-		case "full":
-			return "[Masked IPv4]"
-		default:
-			return ip
-		}
-	})
+	maskedMsg := ipv4Regex.ReplaceAllStringFunc(str, m.ipv4Mask)
 
 	// process ipv6
-	maskedMsg = ipv6Regex.ReplaceAllStringFunc(maskedMsg, func(ip string) string {
-		parts := strings.Split(ip, ":")
-		switch m.config.MaskAddress {
-		case "half":
-			if len(parts) >= 2 {
-				return fmt.Sprintf("%s:%s::/32", parts[0], parts[1])
-			}
-		case "quarter":
-			if len(parts) >= 1 {
-				return fmt.Sprintf("%s::/16", parts[0])
-			}
-		case "full":
-			return "Masked IPv6" // Do not use [Masked IPv6] like ipv4, or you will get "[[Masked IPv6]]" (v6 address already has [])
-		default:
-			return ip
-		}
-		return ip
-	})
+	maskedMsg = ipv6Regex.ReplaceAllStringFunc(maskedMsg, m.ipv6Mask)
 
 	return maskedMsg
 }

@@ -2,6 +2,7 @@ package log_test
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -49,4 +50,18 @@ func TestCustomLogHandler(t *testing.T) {
 	}
 
 	common.Must(logger.Close())
+}
+
+func TestParse(t *testing.T) {
+	ip := "111:111:123::"
+	dot1 := strings.IndexByte(ip, ':')
+	if dot1 < 0 {
+		panic("no dot")
+	}
+	t.Log(dot1, ip[:dot1])
+	dot2 := strings.IndexByte(ip[dot1+1:], ':')
+	if dot2 < 0 {
+		panic("not dot2")
+	}
+	t.Log(ip[:dot1+dot2+1]+".*.*")
 }

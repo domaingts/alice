@@ -72,14 +72,18 @@ func (c *UConn) HandshakeAddress() net.Address {
 	return net.ParseAddress(state.ServerName)
 }
 
+var peerCertificatesOffset = sync.OnceValue(func() uintptr {
+	p, _ := reflect.TypeFor[*utls.UConn]().Elem().FieldByName("peerCertificates")
+	return p.Offset
+})
+
 func (c *UConn) VerifyPeerCertificate(rawCerts [][]byte, verifiedChains [][]*x509.Certificate) error {
 	if c.Config.Show {
 		localAddr := c.LocalAddr().String()
 		fmt.Printf("REALITY localAddr: %v\tis using X25519MLKEM768 for TLS' communication: %v\n", localAddr, c.HandshakeState.ServerHello.ServerShare.Group == utls.X25519MLKEM768)
 		fmt.Printf("REALITY localAddr: %v\tis using ML-DSA-65 for cert's extra verification: %v\n", localAddr, len(c.Config.Mldsa65Verify) > 0)
 	}
-	p, _ := reflect.TypeOf(c.Conn).Elem().FieldByName("peerCertificates")
-	certs := *(*([]*x509.Certificate))(unsafe.Pointer(uintptr(unsafe.Pointer(c.Conn)) + p.Offset))
+	certs := *(*([]*x509.Certificate))(unsafe.Add(unsafe.Pointer(c.Conn), peerCertificatesOffset()))
 	if pub, ok := certs[0].PublicKey.(ed25519.PublicKey); ok {
 		h := hmac.New(sha512.New, c.AuthKey)
 		h.Write(pub)
@@ -261,7 +265,7 @@ func UClient(c net.Conn, config *Config, ctx context.Context, dest net.Destinati
 			}
 			get(true)
 			concurrency := int(crypto.RandBetween(config.SpiderY[2], config.SpiderY[3]))
-			for i := 0; i < concurrency; i++ {
+			for range concurrency {
 				go get(false)
 			}
 			// Do not close the connection
