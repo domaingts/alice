@@ -5,7 +5,6 @@ import (
 	"context"
 	gotls "crypto/tls"
 	"encoding/base64"
-	"reflect"
 	"strings"
 	"sync"
 	"time"
@@ -254,30 +253,28 @@ func (h *Handler) Process(ctx context.Context, link *transport.Link, dialer inte
 		case protocol.RequestCommandMux:
 			fallthrough // let server break Mux connections that contain TCP requests
 		case protocol.RequestCommandTCP, protocol.RequestCommandRvs:
-			var t reflect.Type
-			var p uintptr
+			var i, r uintptr
+			var p unsafe.Pointer
 			if commonConn, ok := conn.(*encryption.CommonConn); ok {
 				if _, ok := commonConn.Conn.(*encryption.XorConn); ok || !proxy.IsRAWTransportWithoutSecurity(iConn) {
 					ob.CanSpliceCopy = 3 // full-random xorConn / non-RAW transport / another securityConn should not be penetrated
 				}
-				t = reflect.TypeOf(commonConn).Elem()
-				p = uintptr(unsafe.Pointer(commonConn))
+				i, r = vless.EncryptionOffsets()
+				p = unsafe.Pointer(commonConn)
 			} else if tlsConn, ok := iConn.(*tls.Conn); ok {
-				t = reflect.TypeOf(tlsConn.Conn).Elem()
-				p = uintptr(unsafe.Pointer(tlsConn.Conn))
+				i, r = vless.TLSOffsets()
+				p = unsafe.Pointer(tlsConn.Conn)
 			} else if utlsConn, ok := iConn.(*tls.UConn); ok {
-				t = reflect.TypeOf(utlsConn.Conn).Elem()
-				p = uintptr(unsafe.Pointer(utlsConn.Conn))
+				i, r = vless.UtlsOffsets()
+				p = unsafe.Pointer(utlsConn.Conn)
 			} else if realityConn, ok := iConn.(*reality.UConn); ok {
-				t = reflect.TypeOf(realityConn.Conn).Elem()
-				p = uintptr(unsafe.Pointer(realityConn.Conn))
+				i, r = vless.UtlsOffsets()
+				p = unsafe.Pointer(realityConn.Conn)
 			} else {
 				return errors.New("XTLS only supports TLS and REALITY directly for now.").AtWarning()
 			}
-			i, _ := t.FieldByName("input")
-			r, _ := t.FieldByName("rawInput")
-			input = (*bytes.Reader)(unsafe.Pointer(p + i.Offset))
-			rawInput = (*bytes.Buffer)(unsafe.Pointer(p + r.Offset))
+			input = (*bytes.Reader)(unsafe.Add(p, i))
+			rawInput = (*bytes.Buffer)(unsafe.Add(p, r))
 		default:
 			panic("unknown VLESS request command")
 		}

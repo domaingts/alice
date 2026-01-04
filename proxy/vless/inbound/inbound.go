@@ -561,16 +561,16 @@ func (h *Handler) Process(ctx context.Context, network net.Network, connection s
 					if _, ok := commonConn.Conn.(*encryption.XorConn); ok || !proxy.IsRAWTransportWithoutSecurity(iConn) {
 						inbound.CanSpliceCopy = 3 // full-random xorConn / non-RAW transport / another securityConn should not be penetrated
 					}
-					i, r = encryptionOffsets()
+					i, r = vless.EncryptionOffsets()
 					p = unsafe.Pointer(commonConn)
 				} else if realityConn, ok := iConn.(*reality.Conn); ok {
-					i, r = realityOffsets()
+					i, r = vless.RealityOffsets()
 					p = unsafe.Pointer(realityConn.Conn)
 				} else if tlsConn, ok := iConn.(*tls.Conn); ok {
 					if tlsConn.ConnectionState().Version != gotls.VersionTLS13 {
 						return errors.New(`failed to use `+requestAddons.Flow+`, found outer tls version `, tlsConn.ConnectionState().Version).AtWarning()
 					}
-					i, r = tlsOffsets()
+					i, r = vless.TLSOffsets()
 					p = unsafe.Pointer(tlsConn.Conn)
 				} else {
 					return errors.New("XTLS only supports TLS and REALITY directly for now.").AtWarning()
