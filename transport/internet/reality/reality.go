@@ -184,11 +184,14 @@ func UClient(c net.Conn, config *Config, ctx context.Context, dest net.Destinati
 		fmt.Printf("REALITY localAddr: %v\tuConn.Verified: %v\n", localAddr, uConn.Verified)
 	}
 	if !uConn.Verified {
+		errors.LogError(ctx, "REALITY: received real certificate (potential MITM or redirection)")
 		go func() {
 			client := &http.Client{
 				Transport: &http2.Transport{
 					DialTLSContext: func(ctx context.Context, network, addr string, cfg *gotls.Config) (net.Conn, error) {
-						fmt.Printf("REALITY localAddr: %v\tDialTLSContext\n", localAddr)
+						if config.Show {
+							fmt.Printf("REALITY localAddr: %v\tDialTLSContext\n", localAddr)
+						}
 						return uConn, nil
 					},
 				},
@@ -265,7 +268,7 @@ func UClient(c net.Conn, config *Config, ctx context.Context, dest net.Destinati
 			}
 			get(true)
 			concurrency := int(crypto.RandBetween(config.SpiderY[2], config.SpiderY[3]))
-			for range concurrency {
+			for i := 0; i < concurrency; i++ {
 				go get(false)
 			}
 			// Do not close the connection

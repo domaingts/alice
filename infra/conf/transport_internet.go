@@ -16,6 +16,7 @@ import (
 	"github.com/xtls/xray-core/common/platform/filesystem"
 	"github.com/xtls/xray-core/common/serial"
 	"github.com/xtls/xray-core/transport/internet"
+	"github.com/xtls/xray-core/transport/internet/finalmask/salamander"
 	"github.com/xtls/xray-core/transport/internet/reality"
 	"github.com/xtls/xray-core/transport/internet/splithttp"
 	"github.com/xtls/xray-core/transport/internet/tcp"
@@ -167,6 +168,62 @@ func (c *SplitHTTPConfig) Build() (proto.Message, error) {
 	return config, nil
 }
 
+const (
+	Byte     = 1
+	Kilobyte = 1024 * Byte
+	Megabyte = 1024 * Kilobyte
+	Gigabyte = 1024 * Megabyte
+	Terabyte = 1024 * Gigabyte
+)
+
+type Bandwidth string
+
+func (b Bandwidth) Bps() (uint64, error) {
+	s := strings.TrimSpace(strings.ToLower(string(b)))
+	if s == "" {
+		return 0, nil
+	}
+
+	idx := len(s)
+	for i, c := range s {
+		if (c < '0' || c > '9') && c != '.' {
+			idx = i
+			break
+		}
+	}
+
+	numStr := s[:idx]
+	unit := strings.TrimSpace(s[idx:])
+
+	val, err := strconv.ParseFloat(numStr, 64)
+	if err != nil {
+		return 0, err
+	}
+
+	mul := uint64(1)
+	switch unit {
+	case "", "b", "bps":
+		mul = Byte
+	case "k", "kb", "kbps":
+		mul = Kilobyte
+	case "m", "mb", "mbps":
+		mul = Megabyte
+	case "g", "gb", "gbps":
+		mul = Gigabyte
+	case "t", "tb", "tbps":
+		mul = Terabyte
+	default:
+		return 0, errors.New("unsupported unit: " + unit)
+	}
+
+	return uint64(val*float64(mul)) / 8, nil
+}
+
+type UdpHop struct {
+	PortList json.RawMessage `json:"port"`
+	Interval int64           `json:"interval"`
+}
+
 func readFileOrString(f string, s []string) ([]byte, error) {
 	if len(f) > 0 {
 		return filesystem.ReadCert(f)
@@ -230,27 +287,26 @@ func (c *TLSCertConfig) Build() (*tls.Certificate, error) {
 }
 
 type TLSConfig struct {
-	Insecure                             bool             `json:"allowInsecure"`
-	Certs                                []*TLSCertConfig `json:"certificates"`
-	ServerName                           string           `json:"serverName"`
-	ALPN                                 *StringList      `json:"alpn"`
-	EnableSessionResumption              bool             `json:"enableSessionResumption"`
-	DisableSystemRoot                    bool             `json:"disableSystemRoot"`
-	MinVersion                           string           `json:"minVersion"`
-	MaxVersion                           string           `json:"maxVersion"`
-	CipherSuites                         string           `json:"cipherSuites"`
-	Fingerprint                          string           `json:"fingerprint"`
-	RejectUnknownSNI                     bool             `json:"rejectUnknownSni"`
-	PinnedPeerCertificateChainSha256     *[]string        `json:"pinnedPeerCertificateChainSha256"`
-	PinnedPeerCertificatePublicKeySha256 *[]string        `json:"pinnedPeerCertificatePublicKeySha256"`
-	CurvePreferences                     *StringList      `json:"curvePreferences"`
-	MasterKeyLog                         string           `json:"masterKeyLog"`
-	ServerNameToVerify                   string           `json:"serverNameToVerify"`
-	VerifyPeerCertInNames                []string         `json:"verifyPeerCertInNames"`
-	ECHServerKeys                        string           `json:"echServerKeys"`
-	ECHConfigList                        string           `json:"echConfigList"`
-	ECHForceQuery                        string           `json:"echForceQuery"`
-	ECHSocketSettings                    *SocketConfig    `json:"echSockopt"`
+	Insecure                bool             `json:"allowInsecure"`
+	Certs                   []*TLSCertConfig `json:"certificates"`
+	ServerName              string           `json:"serverName"`
+	ALPN                    *StringList      `json:"alpn"`
+	EnableSessionResumption bool             `json:"enableSessionResumption"`
+	DisableSystemRoot       bool             `json:"disableSystemRoot"`
+	MinVersion              string           `json:"minVersion"`
+	MaxVersion              string           `json:"maxVersion"`
+	CipherSuites            string           `json:"cipherSuites"`
+	Fingerprint             string           `json:"fingerprint"`
+	RejectUnknownSNI        bool             `json:"rejectUnknownSni"`
+	PinnedPeerCertSha256    string           `json:"pinnedPeerCertSha256"`
+	CurvePreferences        *StringList      `json:"curvePreferences"`
+	MasterKeyLog            string           `json:"masterKeyLog"`
+	ServerNameToVerify      string           `json:"serverNameToVerify"`
+	VerifyPeerCertInNames   []string         `json:"verifyPeerCertInNames"`
+	ECHServerKeys           string           `json:"echServerKeys"`
+	ECHConfigList           string           `json:"echConfigList"`
+	ECHForceQuery           string           `json:"echForceQuery"`
+	ECHSocketSettings       *SocketConfig    `json:"echSockopt"`
 }
 
 // Build implements Buildable.
@@ -266,6 +322,9 @@ func (c *TLSConfig) Build() (proto.Message, error) {
 	}
 	serverName := c.ServerName
 	config.AllowInsecure = c.Insecure
+	if config.AllowInsecure {
+		errors.PrintDeprecatedFeatureWarning("allowInsecure", "pinnedPeerCertSha256")
+	}
 	if len(c.ServerName) > 0 {
 		config.ServerName = serverName
 	}
@@ -293,25 +352,20 @@ func (c *TLSConfig) Build() (proto.Message, error) {
 	}
 	config.RejectUnknownSni = c.RejectUnknownSNI
 
-	if c.PinnedPeerCertificateChainSha256 != nil {
-		config.PinnedPeerCertificateChainSha256 = [][]byte{}
-		for _, v := range *c.PinnedPeerCertificateChainSha256 {
-			hashValue, err := base64.StdEncoding.DecodeString(v)
+	if c.PinnedPeerCertSha256 != "" {
+		config.PinnedPeerCertSha256 = [][]byte{}
+		// Split by tilde separator
+		hashes := strings.Split(c.PinnedPeerCertSha256, "~")
+		for _, v := range hashes {
+			v = strings.TrimSpace(v)
+			if v == "" {
+				continue
+			}
+			hashValue, err := hex.DecodeString(v)
 			if err != nil {
 				return nil, err
 			}
-			config.PinnedPeerCertificateChainSha256 = append(config.PinnedPeerCertificateChainSha256, hashValue)
-		}
-	}
-
-	if c.PinnedPeerCertificatePublicKeySha256 != nil {
-		config.PinnedPeerCertificatePublicKeySha256 = [][]byte{}
-		for _, v := range *c.PinnedPeerCertificatePublicKeySha256 {
-			hashValue, err := base64.StdEncoding.DecodeString(v)
-			if err != nil {
-				return nil, err
-			}
-			config.PinnedPeerCertificatePublicKeySha256 = append(config.PinnedPeerCertificatePublicKeySha256, hashValue)
+			config.PinnedPeerCertSha256 = append(config.PinnedPeerCertSha256, hashValue)
 		}
 	}
 
@@ -575,18 +629,20 @@ func (p TransportProtocol) Build() (string, error) {
 	case "kcp", "mkcp":
 		return "mkcp", nil
 	case "grpc":
-		errors.PrintDeprecatedFeatureWarning("gRPC transport (with unnecessary costs, etc.)", "XHTTP stream-up H2")
+		errors.PrintNonRemovalDeprecatedFeatureWarning("gRPC transport (with unnecessary costs, etc.)", "XHTTP stream-up H2")
 		return "grpc", nil
 	case "ws", "websocket":
-		errors.PrintDeprecatedFeatureWarning("WebSocket transport (with ALPN http/1.1, etc.)", "XHTTP H2 & H3")
+		errors.PrintNonRemovalDeprecatedFeatureWarning("WebSocket transport (with ALPN http/1.1, etc.)", "XHTTP H2 & H3")
 		return "websocket", nil
 	case "httpupgrade":
-		errors.PrintDeprecatedFeatureWarning("HTTPUpgrade transport (with ALPN http/1.1, etc.)", "XHTTP H2 & H3")
+		errors.PrintNonRemovalDeprecatedFeatureWarning("HTTPUpgrade transport (with ALPN http/1.1, etc.)", "XHTTP H2 & H3")
 		return "httpupgrade", nil
 	case "h2", "h3", "http":
 		return "", errors.PrintRemovedFeatureError("HTTP transport (without header padding, etc.)", "XHTTP stream-one H2 & H3")
 	case "quic":
 		return "", errors.PrintRemovedFeatureError("QUIC transport (without web service, etc.)", "XHTTP stream-one H3")
+	case "hysteria":
+		return "hysteria", nil
 	default:
 		return "", errors.New("Config: unknown transport protocol: ", p)
 	}
@@ -769,11 +825,54 @@ func (c *SocketConfig) Build() (*internet.SocketConfig, error) {
 	}, nil
 }
 
+var (
+	udpmaskLoader = NewJSONConfigLoader(ConfigCreatorCache{
+		"salamander": func() any { return new(Salamander) },
+	}, "type", "settings")
+)
+
+type Salamander struct {
+	Password string `json:"password"`
+}
+
+func (c *Salamander) Build() (proto.Message, error) {
+	config := &salamander.Config{}
+	config.Password = c.Password
+	return config, nil
+}
+
+type FinalMask struct {
+	Type     string           `json:"type"`
+	Settings *json.RawMessage `json:"settings"`
+}
+
+func (c *FinalMask) Build(tcpmaskLoader bool) (proto.Message, error) {
+	loader := udpmaskLoader
+	if tcpmaskLoader {
+		return nil, errors.New("")
+	}
+
+	settings := []byte("{}")
+	if c.Settings != nil {
+		settings = ([]byte)(*c.Settings)
+	}
+	rawConfig, err := loader.LoadWithID(settings, c.Type)
+	if err != nil {
+		return nil, err
+	}
+	ts, err := rawConfig.(Buildable).Build()
+	if err != nil {
+		return nil, err
+	}
+	return ts, nil
+}
+
 type StreamConfig struct {
 	Address           *Address           `json:"address"`
 	Port              uint16             `json:"port"`
 	Network           *TransportProtocol `json:"network"`
 	Security          string             `json:"security"`
+	Udpmasks          []*FinalMask       `json:"udpmasks"`
 	TLSSettings       *TLSConfig         `json:"tlsSettings"`
 	REALITYSettings   *REALITYConfig     `json:"realitySettings"`
 	RAWSettings       *TCPConfig         `json:"rawSettings"`
@@ -799,6 +898,7 @@ func (c *StreamConfig) Build() (*internet.StreamConfig, error) {
 		}
 		config.ProtocolName = protocol
 	}
+
 	switch strings.ToLower(c.Security) {
 	case "", "none":
 	case "tls":
@@ -832,6 +932,7 @@ func (c *StreamConfig) Build() (*internet.StreamConfig, error) {
 	default:
 		return nil, errors.New(`Unknown security "` + c.Security + `".`)
 	}
+
 	if c.RAWSettings != nil {
 		c.TCPSettings = c.RAWSettings
 	}
@@ -865,6 +966,15 @@ func (c *StreamConfig) Build() (*internet.StreamConfig, error) {
 		}
 		config.SocketSettings = ss
 	}
+
+	for _, mask := range c.Udpmasks {
+		u, err := mask.Build(false)
+		if err != nil {
+			return nil, errors.New("failed to build mask with type ", mask.Type).Base(err)
+		}
+		config.Udpmasks = append(config.Udpmasks, serial.ToTypedMessage(u))
+	}
+
 	return config, nil
 }
 

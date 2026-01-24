@@ -178,8 +178,7 @@ func QueryRecord(domain string, server string, forceQuery string, sockopt *inter
 	// If expire is zero value, it means we are in initial state, wait for the query to finish
 	// otherwise return old value immediately and update in a goroutine
 	// but if the cache is too old, wait for update
-
-	if configRecord.expire.Equal(time.Time{}) || configRecord.expire.Add(time.Hour*6).Before(time.Now()) {
+	if configRecord.expire == (time.Time{}) || configRecord.expire.Add(time.Hour*6).Before(time.Now()) {
 		return echConfigCache.Update(domain, server, false, forceQuery, sockopt)
 	} else {
 		// If someone already acquired the lock, it means it is updating, do not start another update goroutine
@@ -247,7 +246,7 @@ func dnsQuery(server string, domain string, sockopt *internet.SocketConfig) ([]b
 				},
 			}
 			c := &http.Client{
-				Timeout:   5 * time.Second,
+				Timeout:   30 * time.Second,
 				Transport: tr,
 			}
 			client, _ = clientForECHDOH.LoadOrStore(serverKey, c)

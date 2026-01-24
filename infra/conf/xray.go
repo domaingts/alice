@@ -3,8 +3,6 @@ package conf
 import (
 	"context"
 	"encoding/json"
-	"log"
-	"os"
 	"path/filepath"
 	"strings"
 
@@ -26,6 +24,7 @@ var (
 		"mixed":         func() any { return new(SocksServerConfig) },
 		"socks":         func() any { return new(SocksServerConfig) },
 		"vless":         func() any { return new(VLessInboundConfig) },
+		"tun":           func() any { return new(TunConfig) },
 	}, "protocol", "settings")
 
 	outboundConfigLoader = NewJSONConfigLoader(ConfigCreatorCache{
@@ -39,8 +38,6 @@ var (
 		"vless":       func() any { return new(VLessOutboundConfig) },
 		"dns":         func() any { return new(DNSOutboundConfig) },
 	}, "protocol", "settings")
-
-	ctllog = log.New(os.Stderr, "xctl> ", 0)
 )
 
 type SniffingConfig struct {
@@ -125,7 +122,10 @@ type InboundDetourConfig struct {
 func (c *InboundDetourConfig) Build() (*core.InboundHandlerConfig, error) {
 	receiverSettings := &proxyman.ReceiverConfig{}
 
-	if c.ListenOn == nil {
+	// TUN inbound doesn't need port configuration as it uses network interface instead
+	if strings.ToLower(c.Protocol) == "tun" {
+		// Skip port validation for TUN
+	} else if c.ListenOn == nil {
 		// Listen on anyip, must set PortList
 		if c.PortList == nil {
 			return nil, errors.New("Listen on AnyIP but no Port(s) set in InboundDetour.")

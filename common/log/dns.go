@@ -16,26 +16,26 @@ type DNSLog struct {
 }
 
 func (l *DNSLog) String() string {
-	var builder strings.Builder
+	builder := &strings.Builder{}
 
 	// Server got answer: domain -> [ip1, ip2] 23ms
 	builder.WriteString(l.Server)
-	builder.WriteByte(' ')
+	builder.WriteString(" ")
 	builder.WriteString(string(l.Status))
-	builder.WriteByte(' ')
+	builder.WriteString(" ")
 	builder.WriteString(l.Domain)
 	builder.WriteString(" -> [")
 	builder.WriteString(joinNetIP(l.Result))
-	builder.WriteByte(']')
+	builder.WriteString("]")
 
 	if l.Elapsed > 0 {
-		builder.WriteByte(' ')
+		builder.WriteString(" ")
 		builder.WriteString(l.Elapsed.String())
 	}
 	if l.Error != nil {
 		builder.WriteString(" <")
 		builder.WriteString(l.Error.Error())
-		builder.WriteByte('>')
+		builder.WriteString(">")
 	}
 	return builder.String()
 }
@@ -49,19 +49,12 @@ var (
 )
 
 func joinNetIP(ips []net.IP) string {
-	switch len(ips) {
-	case 0:
+	if len(ips) == 0 {
 		return ""
-	case 1:
-		return ips[0].String()
-	default:
 	}
-	var builder strings.Builder
-	builder.Grow(len(ips) * 20)
-	for i := range len(ips) - 1 {
-		builder.WriteString(ips[i].String())
-		builder.WriteString(", ")
+	sips := make([]string, 0, len(ips))
+	for _, ip := range ips {
+		sips = append(sips, ip.String())
 	}
-	builder.WriteString(ips[len(ips)-1].String())
-	return builder.String()
+	return strings.Join(sips, ", ")
 }
