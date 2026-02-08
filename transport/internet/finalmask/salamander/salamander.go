@@ -1,4 +1,4 @@
-package obfs
+package salamander
 
 import (
 	"fmt"
@@ -14,8 +14,6 @@ const (
 	smSaltLen   = 8
 	smKeyLen    = blake2b.Size256
 )
-
-var _ Obfuscator = (*SalamanderObfuscator)(nil)
 
 var ErrPSKTooShort = fmt.Errorf("PSK must be at least %d bytes", smPSKMinLen)
 
