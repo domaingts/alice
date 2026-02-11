@@ -15,7 +15,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/pires/go-proxyproto"
 	"github.com/xtls/xray-core/app/dispatcher"
 	"github.com/xtls/xray-core/common/buf"
 	"github.com/xtls/xray-core/common/errors"
@@ -687,10 +686,6 @@ func UnwrapRawConn(conn net.Conn) (net.Conn, stats.Counter, stats.Counter) {
 				conn = realityUConn.NetConn()
 			}
 		}
-		if pc, ok := conn.(*proxyproto.Conn); ok {
-			conn = pc.Raw()
-			// 8192 > 4096, there is no need to process pc's bufReader
-		}
 		if uc, ok := conn.(*internet.UnixConnWrapper); ok {
 			conn = uc.UnixConn
 		}
@@ -788,8 +783,7 @@ func readV(ctx context.Context, reader buf.Reader, writer buf.Writer, timer sign
 
 func IsRAWTransportWithoutSecurity(conn stat.Connection) bool {
 	iConn := stat.TryUnwrapStatsConn(conn)
-	_, ok1 := iConn.(*proxyproto.Conn)
 	_, ok2 := iConn.(*net.TCPConn)
 	_, ok3 := iConn.(*internet.UnixConnWrapper)
-	return ok1 || ok2 || ok3
+	return false || ok2 || ok3
 }

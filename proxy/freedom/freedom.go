@@ -6,7 +6,6 @@ import (
 	"io"
 	"time"
 
-	"github.com/pires/go-proxyproto"
 	"github.com/xtls/xray-core/common"
 	"github.com/xtls/xray-core/common/buf"
 	"github.com/xtls/xray-core/common/crypto"
@@ -84,7 +83,6 @@ func (h *Handler) Process(ctx context.Context, link *transport.Link, dialer inte
 	}
 	ob.Name = "freedom"
 	ob.CanSpliceCopy = 1
-	inbound := session.InboundFromContext(ctx)
 
 	destination := ob.Target
 	origTargetAddr := ob.OriginalTarget.Address
@@ -133,23 +131,11 @@ func (h *Handler) Process(ctx context.Context, link *transport.Link, dialer inte
 			}
 		}
 
-		rawConn, err := dialer.Dial(ctx, dialDest)
+		var err error
+		conn, err = dialer.Dial(ctx, dialDest)
 		if err != nil {
 			return err
 		}
-
-		if h.config.ProxyProtocol > 0 && h.config.ProxyProtocol <= 2 {
-			version := byte(h.config.ProxyProtocol)
-			srcAddr := inbound.Source.RawNetAddr()
-			dstAddr := rawConn.RemoteAddr()
-			header := proxyproto.HeaderProxyFromAddrs(version, srcAddr, dstAddr)
-			if _, err = header.WriteTo(rawConn); err != nil {
-				rawConn.Close()
-				return err
-			}
-		}
-
-		conn = rawConn
 		return nil
 	})
 	if err != nil {
