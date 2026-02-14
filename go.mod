@@ -2,7 +2,7 @@ module github.com/xtls/xray-core
 
 go 1.26
 
-replace github.com/xtls/reality => github.com/domaingts/electricity v0.1.3
+replace github.com/xtls/reality => github.com/domaingts/electricity v0.1.4
 
 require (
 	github.com/apernet/quic-go v0.57.2-0.20260111184307-eec823306178
@@ -35,7 +35,6 @@ require (
 	github.com/juju/ratelimit v1.0.2 // indirect
 	github.com/klauspost/compress v1.17.4 // indirect
 	github.com/kr/text v0.2.0 // indirect
-	github.com/pires/go-proxyproto v0.9.2 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/quic-go/qpack v0.6.0 // indirect
 	github.com/vishvananda/netns v0.0.5 // indirect
