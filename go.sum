@@ -7,8 +7,8 @@ github.com/cloudflare/circl v1.6.3/go.mod h1:2eXP6Qfat4O/Yhh8BznvKnJ+uzEoTQ6jVKJ
 github.com/creack/pty v1.1.9/go.mod h1:oKZEueFk5CKHvIhNR5MUki03XCEU+Q6VDXinZuGJ33E=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
-github.com/domaingts/electricity v0.1.4 h1:5AOlIyTNI/e9ngonKbCz84u8Vd+aj9vo83579b10O2s=
-github.com/domaingts/electricity v0.1.4/go.mod h1:hL7pCb+N5VxtYabmVstjZzefDOv+O9ThdybSBRvB2qw=
+github.com/domaingts/electricity v0.1.5 h1:PpBpNKJ72iFy3g0+xRCMfLa0U9mm9CG0UY9DKnk7MJg=
+github.com/domaingts/electricity v0.1.5/go.mod h1:hL7pCb+N5VxtYabmVstjZzefDOv+O9ThdybSBRvB2qw=
 github.com/golang/mock v1.7.0-rc.1 h1:YojYx61/OLFsiv6Rw1Z96LpldJIy31o+UHmwAUMJ6/U=
 github.com/golang/mock v1.7.0-rc.1/go.mod h1:s42URUywIqd+OcERslBJvOjepvNymP31m3q8d/GkuRs=
 github.com/google/btree v1.1.2 h1:xf4v41cLI2Z6FxbKm+8Bu+m8ifhj15JuZ9sa0jZCMUU=

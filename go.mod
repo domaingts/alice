@@ -2,7 +2,7 @@ module github.com/xtls/xray-core
 
 go 1.26
 
-replace github.com/xtls/reality => github.com/domaingts/electricity v0.1.4
+replace github.com/xtls/reality => github.com/domaingts/electricity v0.1.5
 
 require (
 	github.com/apernet/quic-go v0.57.2-0.20260111184307-eec823306178
