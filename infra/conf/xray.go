@@ -29,7 +29,6 @@ var (
 		"mixed":         func() any { return new(SocksServerConfig) },
 		"socks":         func() any { return new(SocksServerConfig) },
 		"vless":         func() any { return new(VLessInboundConfig) },
-		"tun":           func() any { return new(TunConfig) },
 	}, "protocol", "settings")
 
 	outboundConfigLoader = NewJSONConfigLoader(ConfigCreatorCache{
