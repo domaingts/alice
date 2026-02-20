@@ -43,7 +43,6 @@ import (
 	_ "github.com/xtls/xray-core/transport/internet/udp"
 
 	// Transport headers
-	_ "github.com/xtls/xray-core/transport/internet/headers/http"
 	_ "github.com/xtls/xray-core/transport/internet/headers/noop"
 
 	// JSON

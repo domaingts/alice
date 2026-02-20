@@ -354,7 +354,7 @@ func TestChinaSites(t *testing.T) {
 		},
 	}
 
-	for i := 0; i < 1024; i++ {
+	for i := range 1024 {
 		testCases = append(testCases, TestCase{Domain: strconv.Itoa(i) + ".not-exists.com", Output: false})
 	}
 
@@ -396,7 +396,7 @@ func BenchmarkMphDomainMatcher(b *testing.B) {
 		},
 	}
 
-	for i := 0; i < 1024; i++ {
+	for i := range 1024 {
 		testCases = append(testCases, TestCase{Domain: strconv.Itoa(i) + ".not-exists.com", Output: false})
 	}
 

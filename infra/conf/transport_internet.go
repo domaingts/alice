@@ -8,6 +8,7 @@ import (
 	"math"
 	"net/url"
 	"runtime"
+	"slices"
 	"strconv"
 	"strings"
 	"syscall"
@@ -39,7 +40,6 @@ import (
 var (
 	tcpHeaderLoader = NewJSONConfigLoader(ConfigCreatorCache{
 		"none": func() any { return new(NoOpConnectionAuthenticator) },
-		"http": func() any { return new(Authenticator) },
 	}, "type", "")
 )
 
@@ -463,10 +463,8 @@ func (c *TLSConfig) Build() (proto.Message, error) {
 		config.NextProtocol = []string(*c.ALPN)
 	}
 	if len(config.NextProtocol) > 1 {
-		for _, p := range config.NextProtocol {
-			if tls.IsFromMitm(p) {
-				return nil, errors.New(`only one element is allowed in "alpn" when using "fromMitm" in it`)
-			}
+		if slices.ContainsFunc(config.NextProtocol, tls.IsFromMitm) {
+			return nil, errors.New(`only one element is allowed in "alpn" when using "fromMitm" in it`)
 		}
 	}
 	if c.CurvePreferences != nil && len(*c.CurvePreferences) > 0 {

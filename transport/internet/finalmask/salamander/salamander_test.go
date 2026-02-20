@@ -39,7 +39,7 @@ func TestSalamanderObfuscator(t *testing.T) {
 	in := make([]byte, 1200)
 	oOut := make([]byte, 2048)
 	dOut := make([]byte, 2048)
-	for i := 0; i < 1000; i++ {
+	for range 1000 {
 		_, _ = rand.Read(in)
 		n := o.Obfuscate(in, oOut)
 		assert.Equal(t, len(in)+smSaltLen, n)
@@ -73,7 +73,7 @@ func TestSalamanderInPlace(t *testing.T) {
 func TestSalamanderBounce(t *testing.T) {
 	o, _ := salamander.NewSalamanderObfuscator([]byte("average_password"))
 	buf := make([]byte, 8)
-	for i := 0; i < 1000; i++ {
+	for range 1000 {
 		_, _ = rand.Read(buf)
 		n := o.Deobfuscate(buf, buf)
 		assert.Equal(t, 0, n)

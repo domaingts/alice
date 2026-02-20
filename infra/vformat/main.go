@@ -49,8 +49,8 @@ func GetRuntimeEnv(key string) (string, error) {
 	if readErr != nil {
 		return "", readErr
 	}
-	envStrings := strings.Split(string(data), "\n")
-	for _, envItem := range envStrings {
+	envStrings := strings.SplitSeq(string(data), "\n")
+	for envItem := range envStrings {
 		envItem = strings.TrimSuffix(envItem, "\r")
 		envKeyValue := strings.Split(envItem, "=")
 		if len(envKeyValue) == 2 && strings.TrimSpace(envKeyValue[0]) == key {

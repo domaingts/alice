@@ -74,7 +74,7 @@ func isNullValue(f reflect.StructField, rv reflect.Value) bool {
 
 func toJsonName(f reflect.StructField) string {
 	if tags := f.Tag.Get("protobuf"); len(tags) > 0 {
-		for _, tag := range strings.Split(tags, ",") {
+		for tag := range strings.SplitSeq(tags, ",") {
 			if before, after, ok := strings.Cut(tag, "="); ok && before == "json" {
 				return after
 			}
@@ -111,7 +111,7 @@ func marshalStruct(v reflect.Value, ignoreNullValue bool, insertTypeInfo bool) a
 func marshalMap(v reflect.Value, ignoreNullValue bool, insertTypeInfo bool) any {
 	// policy.level is map[uint32] *struct
 	kt := v.Type().Key()
-	vt := reflect.TypeOf((*any)(nil))
+	vt := reflect.TypeFor[*any]()
 	mt := reflect.MapOf(kt, vt)
 	r := reflect.MakeMap(mt)
 	for _, key := range v.MapKeys() {
@@ -234,7 +234,7 @@ func marshalInterface(v any, ignoreNullValue bool, insertTypeInfo bool) any {
 	}
 
 	rv := reflect.ValueOf(v)
-	if rv.Kind() == reflect.Ptr {
+	if rv.Kind() == reflect.Pointer {
 		rv = rv.Elem()
 	}
 	k := rv.Kind()

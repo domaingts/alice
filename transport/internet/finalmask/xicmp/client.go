@@ -250,10 +250,7 @@ func (c *xicmpConnClient) sendLoop() {
 		}
 
 		if pollTimerExpired {
-			pollDelay = time.Duration(float64(pollDelay) * pollDelayMultiplier)
-			if pollDelay > maxPollDelay {
-				pollDelay = maxPollDelay
-			}
+			pollDelay = min(time.Duration(float64(pollDelay)*pollDelayMultiplier), maxPollDelay)
 		} else {
 			if !pollTimer.Stop() {
 				<-pollTimer.C

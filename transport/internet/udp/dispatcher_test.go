@@ -74,7 +74,7 @@ func TestSameDestinationDispatching(t *testing.T) {
 	})
 
 	dispatcher.Dispatch(ctx, dest, b)
-	for i := 0; i < 5; i++ {
+	for range 5 {
 		dispatcher.Dispatch(ctx, dest, b)
 	}
 

@@ -160,7 +160,7 @@ func TestTagsCache(t *testing.T) {
 		}
 	}
 
-	for i := 0; i < threads_num; i++ {
+	for range threads_num {
 		wg_add_rm.Add(2)
 		go rmHandlers()
 		go addHandlers()

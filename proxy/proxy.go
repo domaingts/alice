@@ -13,6 +13,7 @@ import (
 	"math/big"
 	"runtime"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/xtls/xray-core/app/dispatcher"
@@ -458,7 +459,7 @@ func ReshapeMultiBuffer(ctx context.Context, buffer buf.MultiBuffer) buf.MultiBu
 		return buffer
 	}
 	mb2 := make(buf.MultiBuffer, 0, len(buffer)+needReshape)
-	toPrint := ""
+	var toPrint strings.Builder
 	for i, buffer1 := range buffer {
 		if buffer1.Len() >= buf.Size-21 {
 			index := int32(bytes.LastIndex(buffer1.Bytes(), TlsApplicationDataStart))
@@ -469,15 +470,15 @@ func ReshapeMultiBuffer(ctx context.Context, buffer buf.MultiBuffer) buf.MultiBu
 			buffer2.Write(buffer1.BytesFrom(index))
 			buffer1.Resize(0, index)
 			mb2 = append(mb2, buffer1, buffer2)
-			toPrint += " " + strconv.Itoa(int(buffer1.Len())) + " " + strconv.Itoa(int(buffer2.Len()))
+			toPrint.WriteString(" " + strconv.Itoa(int(buffer1.Len())) + " " + strconv.Itoa(int(buffer2.Len())))
 		} else {
 			mb2 = append(mb2, buffer1)
-			toPrint += " " + strconv.Itoa(int(buffer1.Len()))
+			toPrint.WriteString(" " + strconv.Itoa(int(buffer1.Len())))
 		}
 		buffer[i] = nil
 	}
 	buffer = buffer[:0]
-	errors.LogDebug(ctx, "ReshapeMultiBuffer ", toPrint)
+	errors.LogDebug(ctx, "ReshapeMultiBuffer ", toPrint.String())
 	return mb2
 }
 
@@ -567,10 +568,7 @@ func XtlsUnpadding(b *buf.Buffer, s *TrafficState, isUplink bool, ctx context.Co
 			}
 			*remainingCommand--
 		} else if *remainingContent > 0 {
-			len := *remainingContent
-			if b.Len() < len {
-				len = b.Len()
-			}
+			len := min(b.Len(), *remainingContent)
 			data, err := b.ReadBytes(len)
 			if err != nil {
 				return newbuffer
@@ -578,10 +576,7 @@ func XtlsUnpadding(b *buf.Buffer, s *TrafficState, isUplink bool, ctx context.Co
 			newbuffer.Write(data)
 			*remainingContent -= len
 		} else { // remainingPadding > 0
-			len := *remainingPadding
-			if b.Len() < len {
-				len = b.Len()
-			}
+			len := min(b.Len(), *remainingPadding)
 			b.Advance(len)
 			*remainingPadding -= len
 		}
@@ -630,10 +625,7 @@ func XtlsFilterTls(buffer buf.MultiBuffer, trafficState *TrafficState, ctx conte
 			}
 		}
 		if trafficState.RemainingServerHello > 0 {
-			end := trafficState.RemainingServerHello
-			if end > b.Len() {
-				end = b.Len()
-			}
+			end := min(trafficState.RemainingServerHello, b.Len())
 			trafficState.RemainingServerHello -= b.Len()
 			if bytes.Contains(b.BytesTo(end), Tls13SupportedVersions) {
 				v, ok := Tls13CipherSuiteDic[trafficState.Cipher]

@@ -23,7 +23,7 @@ func TestMaxConnections(t *testing.T) {
 	})
 
 	xmuxClients := make(map[any]struct{})
-	for i := 0; i < 8; i++ {
+	for range 8 {
 		xmuxClients[xmuxManager.GetXmuxClient(context.Background())] = struct{}{}
 	}
 
@@ -42,7 +42,7 @@ func TestCMaxReuseTimes(t *testing.T) {
 	})
 
 	xmuxClients := make(map[any]struct{})
-	for i := 0; i < 64; i++ {
+	for range 64 {
 		xmuxClients[xmuxManager.GetXmuxClient(context.Background())] = struct{}{}
 	}
 
@@ -61,7 +61,7 @@ func TestMaxConcurrency(t *testing.T) {
 	})
 
 	xmuxClients := make(map[any]struct{})
-	for i := 0; i < 64; i++ {
+	for range 64 {
 		xmuxClient := xmuxManager.GetXmuxClient(context.Background())
 		xmuxClient.OpenUsage.Add(1)
 		xmuxClients[xmuxClient] = struct{}{}
@@ -80,7 +80,7 @@ func TestDefault(t *testing.T) {
 	})
 
 	xmuxClients := make(map[any]struct{})
-	for i := 0; i < 64; i++ {
+	for range 64 {
 		xmuxClient := xmuxManager.GetXmuxClient(context.Background())
 		xmuxClient.OpenUsage.Add(1)
 		xmuxClients[xmuxClient] = struct{}{}

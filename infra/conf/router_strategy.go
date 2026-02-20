@@ -84,14 +84,8 @@ func (v *strategyLeastLoadConfig) Build() (proto.Message, error) {
 	if config.Tolerance > 1 {
 		config.Tolerance = 1
 	}
-	config.Expected = v.Expected
-	if config.Expected < 0 {
-		config.Expected = 0
-	}
-	config.MaxRTT = int64(v.MaxRTT)
-	if config.MaxRTT < 0 {
-		config.MaxRTT = 0
-	}
+	config.Expected = max(v.Expected, 0)
+	config.MaxRTT = max(int64(v.MaxRTT), 0)
 	config.Baselines = make([]int64, 0)
 	for _, b := range v.Baselines {
 		if b <= 0 {

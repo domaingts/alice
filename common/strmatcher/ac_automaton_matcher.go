@@ -191,7 +191,7 @@ func (ac *ACAutomaton) Add(domain string, t Type) {
 
 func (ac *ACAutomaton) Build() {
 	queue := list.New()
-	for i := 0; i < validCharCount; i++ {
+	for i := range validCharCount {
 		if ac.Trie[0][i].NextNode != 0 {
 			queue.PushBack(ac.Trie[0][i])
 		}
@@ -203,7 +203,7 @@ func (ac *ACAutomaton) Build() {
 		} else {
 			node := front.Value.(Edge).NextNode
 			queue.Remove(front)
-			for i := 0; i < validCharCount; i++ {
+			for i := range validCharCount {
 				if ac.Trie[node][i].NextNode != 0 {
 					ac.Fail[ac.Trie[node][i].NextNode] = ac.Trie[ac.Fail[node]][i].NextNode
 					queue.PushBack(ac.Trie[node][i])

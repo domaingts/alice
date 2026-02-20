@@ -131,12 +131,12 @@ type RouterRule struct {
 
 func parseIP(s string) (*router.CIDR, error) {
 	var addr, mask string
-	i := strings.Index(s, "/")
-	if i < 0 {
+	before, after, ok := strings.Cut(s, "/")
+	if !ok {
 		addr = s
 	} else {
-		addr = s[:i]
-		mask = s[i+1:]
+		addr = before
+		mask = after
 	}
 	ip := net.ParseAddress(addr)
 	switch ip.Family() {
@@ -264,10 +264,7 @@ func find(r io.Reader, code []byte) []byte {
 			return nil
 		}
 
-		prefixL := bodyL
-		if prefixL > need {
-			prefixL = need
-		}
+		prefixL := min(bodyL, need)
 		prefix := prefixBuf[:prefixL]
 		if _, err := io.ReadFull(br, prefix); err != nil {
 			return nil

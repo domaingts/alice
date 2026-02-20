@@ -3,6 +3,7 @@ package burst
 import (
 	"context"
 	"fmt"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -167,7 +168,7 @@ func (h *HealthPing) doCheck(tags []string, duration time.Duration, rounds int) 
 			h.Settings.Timeout,
 			handler,
 		)
-		for i := 0; i < rounds; i++ {
+		for range rounds {
 			delay := time.Duration(0)
 			if duration > 0 {
 				delay = time.Duration(dice.RollInt63n(int64(duration)))
@@ -203,7 +204,7 @@ func (h *HealthPing) doCheck(tags []string, duration time.Duration, rounds int) 
 			})
 		}
 	}
-	for i := 0; i < count; i++ {
+	for range count {
 		rtt := <-ch
 		if rtt.value > 0 {
 			// should not put results when network is down
@@ -238,13 +239,7 @@ func (h *HealthPing) Cleanup(tags []string) {
 	h.access.Lock()
 	defer h.access.Unlock()
 	for tag := range h.Results {
-		found := false
-		for _, v := range tags {
-			if tag == v {
-				found = true
-				break
-			}
-		}
+		found := slices.Contains(tags, tag)
 		if !found {
 			delete(h.Results, tag)
 		}
