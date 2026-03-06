@@ -12,13 +12,13 @@ require (
 	github.com/klauspost/cpuid/v2 v2.3.0
 	github.com/miekg/dns v1.1.72
 	github.com/refraction-networking/utls v1.8.2
-	github.com/sagernet/sing v0.7.18
+	github.com/sagernet/sing v0.8.1
 	github.com/sagernet/sing-shadowsocks v0.2.9
 	github.com/stretchr/testify v1.11.1
 	github.com/xtls/reality v0.0.0-20251116175510-cd53f7d50237
 	go4.org/netipx v0.0.0-20231129151722-fdeea329fbba
 	golang.org/x/crypto v0.48.0
-	golang.org/x/net v0.50.0
+	golang.org/x/net v0.51.0
 	golang.org/x/sync v0.19.0
 	golang.org/x/sys v0.41.0
 	google.golang.org/protobuf v1.36.11
