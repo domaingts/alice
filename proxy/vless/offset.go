@@ -3,7 +3,6 @@ package vless
 import (
 	"crypto/tls"
 	"reflect"
-	"sync"
 
 	utls "github.com/refraction-networking/utls"
 	"github.com/xtls/reality"
@@ -11,28 +10,33 @@ import (
 )
 
 var (
-	EncryptionOffsets = sync.OnceValues(func() (uintptr, uintptr) {
-		t := reflect.TypeFor[*encryption.CommonConn]().Elem()
-		i, _ := t.FieldByName("input")
-		r, _ := t.FieldByName("rawInput")
-		return i.Offset, r.Offset
-	})
-	TLSOffsets = sync.OnceValues(func() (uintptr, uintptr) {
-		t := reflect.TypeFor[*tls.Conn]().Elem()
-		i, _ := t.FieldByName("input")
-		r, _ := t.FieldByName("rawInput")
-		return i.Offset, r.Offset
-	})
-	UtlsOffsets = sync.OnceValues(func() (uintptr, uintptr) {
-		t := reflect.TypeFor[*utls.Conn]().Elem()
-		i, _ := t.FieldByName("input")
-		r, _ := t.FieldByName("rawInput")
-		return i.Offset, r.Offset
-	})
-	RealityOffsets = sync.OnceValues(func() (uintptr, uintptr) {
-		t := reflect.TypeFor[*reality.Conn]().Elem()
-		i, _ := t.FieldByName("input")
-		r, _ := t.FieldByName("rawInput")
-		return i.Offset, r.Offset
-	})
+	EncryptOffset = NewConnOffset[encryption.CommonConn]()
+	TLSOffset     = NewConnOffset[tls.Conn]()
+	UtlsOffset    = NewConnOffset[utls.Conn]()
+	RealityOffset = NewConnOffset[reality.Conn]()
 )
+
+type Offset interface {
+	Input() uintptr
+	RawInput() uintptr
+}
+
+type ConnOffset struct {
+	input    uintptr
+	rawInput uintptr
+}
+
+func NewConnOffset[T any]() Offset {
+	t := reflect.TypeFor[T]()
+	i, _ := t.FieldByName("input")
+	r, _ := t.FieldByName("rawInput")
+	return &ConnOffset{i.Offset, r.Offset}
+}
+
+func (c *ConnOffset) Input() uintptr {
+	return c.input
+}
+
+func (c *ConnOffset) RawInput() uintptr {
+	return c.rawInput
+}

@@ -12,7 +12,7 @@ require (
 	github.com/klauspost/cpuid/v2 v2.3.0
 	github.com/miekg/dns v1.1.72
 	github.com/refraction-networking/utls v1.8.2
-	github.com/sagernet/sing v0.8.1
+	github.com/sagernet/sing v0.8.2
 	github.com/sagernet/sing-shadowsocks v0.2.9
 	github.com/stretchr/testify v1.11.1
 	github.com/xtls/reality v0.0.0-20251116175510-cd53f7d50237

@@ -553,27 +553,27 @@ func (h *Handler) Process(ctx context.Context, network net.Network, connection s
 				fallthrough // we will break Mux connections that contain TCP requests
 			case protocol.RequestCommandTCP:
 				var p unsafe.Pointer
-				var i, r uintptr
+				var t vless.Offset
 				if commonConn, ok := connection.(*encryption.CommonConn); ok {
 					if _, ok := commonConn.Conn.(*encryption.XorConn); ok || !proxy.IsRAWTransportWithoutSecurity(iConn) {
 						inbound.CanSpliceCopy = 3 // full-random xorConn / non-RAW transport / another securityConn should not be penetrated
 					}
-					i, r = vless.EncryptionOffsets()
+					t = vless.EncryptOffset
 					p = unsafe.Pointer(commonConn)
 				} else if realityConn, ok := iConn.(*reality.Conn); ok {
-					i, r = vless.RealityOffsets()
+					t = vless.RealityOffset
 					p = unsafe.Pointer(realityConn.Conn)
 				} else if tlsConn, ok := iConn.(*tls.Conn); ok {
 					if tlsConn.ConnectionState().Version != gotls.VersionTLS13 {
 						return errors.New(`failed to use `+requestAddons.Flow+`, found outer tls version `, tlsConn.ConnectionState().Version).AtWarning()
 					}
-					i, r = vless.TLSOffsets()
+					t = vless.TLSOffset
 					p = unsafe.Pointer(tlsConn.Conn)
 				} else {
 					return errors.New("XTLS only supports TLS and REALITY directly for now.").AtWarning()
 				}
-				input = (*bytes.Reader)(unsafe.Add(p, i))
-				rawInput = (*bytes.Buffer)(unsafe.Add(p, r))
+				input = (*bytes.Reader)(unsafe.Add(p, t.Input()))
+				rawInput = (*bytes.Buffer)(unsafe.Add(p, t.RawInput()))
 			}
 		} else {
 			return errors.New("account " + account.ID.String() + " is not able to use the flow " + requestAddons.Flow).AtWarning()
