@@ -56,10 +56,10 @@ func TestSameDestinationDispatching(t *testing.T) {
 		}
 	}()
 
-	var count uint32
+	var count atomic.Uint32
 	td := &TestDispatcher{
 		OnDispatch: func(ctx context.Context, dest net.Destination) (*transport.Link, error) {
-			atomic.AddUint32(&count, 1)
+			count.Add(1)
 			return &transport.Link{Reader: downlinkReader, Writer: uplinkWriter}, nil
 		},
 	}
@@ -68,9 +68,9 @@ func TestSameDestinationDispatching(t *testing.T) {
 	b := buf.New()
 	b.WriteString("abcd")
 
-	var msgCount uint32
+	var msgCount atomic.Uint32
 	dispatcher := NewDispatcher(td, func(ctx context.Context, packet *udp.Packet) {
-		atomic.AddUint32(&msgCount, 1)
+		msgCount.Add(1)
 	})
 
 	dispatcher.Dispatch(ctx, dest, b)
@@ -81,10 +81,10 @@ func TestSameDestinationDispatching(t *testing.T) {
 	time.Sleep(time.Second)
 	cancel()
 
-	if count != 1 {
-		t.Error("count: ", count)
+	if v := count.Load(); v != 1 {
+		t.Error("count: ", v)
 	}
-	if v := atomic.LoadUint32(&msgCount); v != 6 {
+	if v := msgCount.Load(); v != 6 {
 		t.Error("msgCount: ", v)
 	}
 }

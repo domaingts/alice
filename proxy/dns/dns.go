@@ -164,17 +164,26 @@ func (h *Handler) Process(ctx context.Context, link *transport.Link, d internet.
 		}
 	}
 
+	var newCtx context.Context
+	var newCancel context.CancelFunc
 	if session.TimeoutOnlyFromContext(ctx) {
-		ctx, _ = context.WithCancel(context.Background())
+		newCtx, newCancel = context.WithCancel(context.Background())
 	}
 
 	ctx, cancel := context.WithCancel(ctx)
 	terminate := func() {
 		cancel()
+		if newCancel != nil {
+			newCancel()
+		}
 		conn.Close()
 	}
 	timer := signal.CancelAfterInactivity(ctx, terminate, h.timeout)
 	defer timer.SetTimeout(0)
+
+	if newCtx != nil {
+		ctx = newCtx
+	}
 
 	request := func() error {
 		defer timer.SetTimeout(0)

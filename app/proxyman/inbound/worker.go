@@ -170,7 +170,7 @@ func (w *tcpWorker) Port() net.Port {
 }
 
 type udpConn struct {
-	lastActivityTime int64 // in seconds
+	lastActivityTime atomic.Int64 // in seconds
 	reader           buf.Reader
 	writer           buf.Writer
 	output           func([]byte) (int, error)
@@ -188,7 +188,7 @@ func (c *udpConn) setInactive() {
 }
 
 func (c *udpConn) updateActivity() {
-	atomic.StoreInt64(&c.lastActivityTime, time.Now().Unix())
+	c.lastActivityTime.Store(time.Now().Unix())
 }
 
 // ReadMultiBuffer implements buf.Reader
@@ -400,7 +400,7 @@ func (w *udpWorker) clean() error {
 	}
 
 	for addr, conn := range w.activeConn {
-		if nowSec-atomic.LoadInt64(&conn.lastActivityTime) > 2*60 {
+		if nowSec-conn.lastActivityTime.Load() > 2*60 {
 			if !conn.inactive {
 				conn.setInactive()
 				delete(w.activeConn, addr)

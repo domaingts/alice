@@ -3,6 +3,7 @@ package core
 import (
 	"context"
 	"reflect"
+	"slices"
 	"sync"
 
 	"github.com/xtls/xray-core/common"
@@ -65,9 +66,9 @@ func (r *resolution) callbackResolution(allFeatures []features.Feature) error {
 	var err error
 	ret := callback.Call(input)
 	errInterface := reflect.TypeOf((*error)(nil)).Elem()
-	for i := len(ret) - 1; i >= 0; i-- {
-		if ret[i].Type() == errInterface {
-			v := ret[i].Interface()
+	for _, r := range slices.Backward(ret) {
+		if r.Type() == errInterface {
+			v := r.Interface()
 			if v != nil {
 				err = v.(error)
 			}
