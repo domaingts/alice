@@ -18,12 +18,12 @@ import (
 
 var (
 	Version_x byte = 26
-	Version_y byte = 8
-	Version_z byte = 22
+	Version_y byte = 9
+	Version_z byte = 4
 )
 
 var (
-	build    = "2026-08-22"
+	build    = "2026-09-04"
 	codename = "Xray, Penetrates Everything."
 	intro    = "A unified platform for anti-censorship."
 )
