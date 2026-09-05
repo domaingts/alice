@@ -2,7 +2,7 @@ module github.com/xtls/xray-core
 
 go 1.27
 
-replace github.com/xtls/reality => github.com/domaingts/electricity v0.2.0
+replace github.com/xtls/reality => github.com/domaingts/electricity v1.2.0
 
 require (
 	github.com/cloudflare/circl v1.6.5
