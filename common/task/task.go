@@ -44,7 +44,7 @@ func Run(ctx context.Context, tasks ...func() error) error {
 		}
 	*/
 
-	for range n {
+	for i := 0; i < n; i++ {
 		select {
 		case err := <-done:
 			return err

@@ -33,7 +33,7 @@ func NewServer(ctx context.Context) *Server {
 }
 
 // Type implements common.HasType.
-func (s *Server) Type() any {
+func (s *Server) Type() interface{} {
 	return s.dispatcher.Type()
 }
 

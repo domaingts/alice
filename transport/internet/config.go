@@ -6,13 +6,11 @@ import (
 	"github.com/xtls/xray-core/common/serial"
 )
 
-type ConfigCreator func() any
+type ConfigCreator func() interface{}
 
-var (
-	globalTransportConfigCreatorCache = make(map[string]ConfigCreator)
-)
+var globalTransportConfigCreatorCache = make(map[string]ConfigCreator)
 
-var strategy = [][]byte{
+var strategy = [11][3]byte{
 	//              name        strategy,   prefer, fallback
 	{0, 0, 0}, //   AsIs        none,       /,      /
 	{1, 0, 0}, //   UseIP       use,        both,   none
@@ -27,8 +25,6 @@ var strategy = [][]byte{
 	{2, 6, 4}, //   ForceIPv6v4 force,      6,      4
 }
 
-const unknownProtocol = "unknown"
-
 func RegisterProtocolConfigCreator(name string, creator ConfigCreator) error {
 	if _, found := globalTransportConfigCreatorCache[name]; found {
 		return errors.New("protocol ", name, " is already registered").AtError()
@@ -39,7 +35,7 @@ func RegisterProtocolConfigCreator(name string, creator ConfigCreator) error {
 
 // Note: Each new transport needs to add init() func in transport/internet/xxx/config.go
 // Otherwise, it will cause #3244
-func CreateTransportConfig(name string) (any, error) {
+func CreateTransportConfig(name string) (interface{}, error) {
 	creator, ok := globalTransportConfigCreatorCache[name]
 	if !ok {
 		return nil, errors.New("unknown transport protocol: ", name)
@@ -47,7 +43,7 @@ func CreateTransportConfig(name string) (any, error) {
 	return creator(), nil
 }
 
-func (c *TransportConfig) GetTypedSettings() (any, error) {
+func (c *TransportConfig) GetTypedSettings() (interface{}, error) {
 	return c.Settings.GetInstance()
 }
 
@@ -63,12 +59,12 @@ func (c *StreamConfig) GetEffectiveProtocol() string {
 	return c.ProtocolName
 }
 
-func (c *StreamConfig) GetEffectiveTransportSettings() (any, error) {
+func (c *StreamConfig) GetEffectiveTransportSettings() (interface{}, error) {
 	protocol := c.GetEffectiveProtocol()
 	return c.GetTransportSettingsFor(protocol)
 }
 
-func (c *StreamConfig) GetTransportSettingsFor(protocol string) (any, error) {
+func (c *StreamConfig) GetTransportSettingsFor(protocol string) (interface{}, error) {
 	if c != nil {
 		for _, settings := range c.TransportSettings {
 			if settings.GetUnifiedProtocolName() == protocol {
@@ -80,7 +76,7 @@ func (c *StreamConfig) GetTransportSettingsFor(protocol string) (any, error) {
 	return CreateTransportConfig(protocol)
 }
 
-func (c *StreamConfig) GetEffectiveSecuritySettings() (any, error) {
+func (c *StreamConfig) GetEffectiveSecuritySettings() (interface{}, error) {
 	for _, settings := range c.SecuritySettings {
 		if settings.Type == c.SecurityType {
 			return settings.GetInstance()
@@ -91,10 +87,6 @@ func (c *StreamConfig) GetEffectiveSecuritySettings() (any, error) {
 
 func (c *StreamConfig) HasSecuritySettings() bool {
 	return len(c.SecuritySettings) > 0
-}
-
-func (c *ProxyConfig) HasTag() bool {
-	return c != nil && len(c.Tag) > 0
 }
 
 func (m SocketConfig_TProxyMode) IsEnabled() bool {

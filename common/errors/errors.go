@@ -24,8 +24,8 @@ type hasSeverity interface {
 
 // Error is an error object with underlying error.
 type Error struct {
-	prefix   []any
-	message  []any
+	prefix   []interface{}
+	message  []interface{}
 	caller   string
 	inner    error
 	severity log.Severity
@@ -121,7 +121,7 @@ type ExportOptionHolder struct {
 type ExportOption func(*ExportOptionHolder)
 
 // New returns a new error object with message formed from given arguments.
-func New(msg ...any) *Error {
+func New(msg ...interface{}) *Error {
 	pc, _, _, _ := runtime.Caller(1)
 	details := runtime.FuncForPC(pc).Name()
 	if len(details) >= trim {
@@ -138,39 +138,39 @@ func New(msg ...any) *Error {
 	}
 }
 
-func LogDebug(ctx context.Context, msg ...any) {
+func LogDebug(ctx context.Context, msg ...interface{}) {
 	doLog(ctx, nil, log.Severity_Debug, msg...)
 }
 
-func LogDebugInner(ctx context.Context, inner error, msg ...any) {
+func LogDebugInner(ctx context.Context, inner error, msg ...interface{}) {
 	doLog(ctx, inner, log.Severity_Debug, msg...)
 }
 
-func LogInfo(ctx context.Context, msg ...any) {
+func LogInfo(ctx context.Context, msg ...interface{}) {
 	doLog(ctx, nil, log.Severity_Info, msg...)
 }
 
-func LogInfoInner(ctx context.Context, inner error, msg ...any) {
+func LogInfoInner(ctx context.Context, inner error, msg ...interface{}) {
 	doLog(ctx, inner, log.Severity_Info, msg...)
 }
 
-func LogWarning(ctx context.Context, msg ...any) {
+func LogWarning(ctx context.Context, msg ...interface{}) {
 	doLog(ctx, nil, log.Severity_Warning, msg...)
 }
 
-func LogWarningInner(ctx context.Context, inner error, msg ...any) {
+func LogWarningInner(ctx context.Context, inner error, msg ...interface{}) {
 	doLog(ctx, inner, log.Severity_Warning, msg...)
 }
 
-func LogError(ctx context.Context, msg ...any) {
+func LogError(ctx context.Context, msg ...interface{}) {
 	doLog(ctx, nil, log.Severity_Error, msg...)
 }
 
-func LogErrorInner(ctx context.Context, inner error, msg ...any) {
+func LogErrorInner(ctx context.Context, inner error, msg ...interface{}) {
 	doLog(ctx, inner, log.Severity_Error, msg...)
 }
 
-func doLog(ctx context.Context, inner error, severity log.Severity, msg ...any) {
+func doLog(ctx context.Context, inner error, severity log.Severity, msg ...interface{}) {
 	pc, _, _, _ := runtime.Caller(2)
 	details := runtime.FuncForPC(pc).Name()
 	if len(details) >= trim {

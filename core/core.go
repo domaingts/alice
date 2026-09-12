@@ -12,6 +12,7 @@ package core
 import (
 	"fmt"
 	"runtime"
+	"runtime/debug"
 
 	"github.com/xtls/xray-core/common/serial"
 )
@@ -19,14 +20,42 @@ import (
 var (
 	Version_x byte = 26
 	Version_y byte = 9
-	Version_z byte = 6
+	Version_z byte = 9
 )
 
 var (
-	build    = "2026-09-05"
+	build    = "Custom"
 	codename = "Xray, Penetrates Everything."
 	intro    = "A unified platform for anti-censorship."
 )
+
+func init() {
+	// Manually injected
+	if build != "Custom" {
+		return
+	}
+	info, ok := debug.ReadBuildInfo()
+	if !ok {
+		return
+	}
+	var isDirty bool
+	var foundBuild bool
+	for _, setting := range info.Settings {
+		switch setting.Key {
+		case "vcs.revision":
+			if len(setting.Value) < 7 {
+				return
+			}
+			build = setting.Value[:7]
+			foundBuild = true
+		case "vcs.modified":
+			isDirty = setting.Value == "true"
+		}
+	}
+	if isDirty && foundBuild {
+		build += "-dirty"
+	}
+}
 
 // Version returns Xray's version as a string, in the form of "x.y.z" where x, y and z are numbers.
 // ".z" part may be omitted in regular releases.

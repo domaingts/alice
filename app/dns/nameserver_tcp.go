@@ -23,7 +23,7 @@ import (
 type TCPNameServer struct {
 	cacheController *CacheController
 	destination     *net.Destination
-	reqID           atomic.Uint32
+	reqID           uint32
 	dial            func(context.Context) (net.Conn, error)
 	clientIP        net.IP
 }
@@ -101,7 +101,7 @@ func (s *TCPNameServer) IsDisableCache() bool {
 }
 
 func (s *TCPNameServer) newReqID() uint16 {
-	return uint16(s.reqID.Add(1))
+	return uint16(atomic.AddUint32(&s.reqID, 1))
 }
 
 // getCacheController implements CachedNameserver.
@@ -113,7 +113,19 @@ func (s *TCPNameServer) getCacheController() *CacheController {
 func (s *TCPNameServer) sendQuery(ctx context.Context, noResponseErrCh chan<- error, fqdn string, option dns_feature.IPOption) {
 	errors.LogInfo(ctx, s.Name(), " querying DNS for: ", fqdn)
 
-	reqs := buildReqMsgs(fqdn, option, s.newReqID, genEDNS0Options(s.clientIP, 0))
+	reqs, err := buildReqMsgs(fqdn, option, s.newReqID, genEDNS0Options(s.clientIP, 0))
+	if err != nil {
+		errors.LogErrorInner(ctx, err, "failed to build dns query for ", fqdn)
+		if noResponseErrCh != nil {
+			if option.IPv4Enable {
+				noResponseErrCh <- err
+			}
+			if option.IPv6Enable {
+				noResponseErrCh <- err
+			}
+		}
+		return
+	}
 
 	var deadline time.Time
 	if d, ok := ctx.Deadline(); ok {

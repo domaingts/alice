@@ -52,7 +52,7 @@ func (d *TestDispatcher) Close() error {
 	return nil
 }
 
-func (*TestDispatcher) Type() any {
+func (*TestDispatcher) Type() interface{} {
 	return routing.DispatcherType()
 }
 

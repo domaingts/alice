@@ -52,7 +52,9 @@ func TestXrayDial(t *testing.T) {
 		},
 		Outbound: []*core.OutboundHandlerConfig{
 			{
-				ProxySettings: serial.ToTypedMessage(&freedom.Config{}),
+				ProxySettings: serial.ToTypedMessage(&freedom.Config{
+					FinalRules: []*freedom.FinalRuleConfig{{Action: freedom.RuleAction_Allow}},
+				}),
 			},
 		},
 	}
@@ -102,7 +104,9 @@ func TestXrayDialUDPConn(t *testing.T) {
 		},
 		Outbound: []*core.OutboundHandlerConfig{
 			{
-				ProxySettings: serial.ToTypedMessage(&freedom.Config{}),
+				ProxySettings: serial.ToTypedMessage(&freedom.Config{
+					FinalRules: []*freedom.FinalRuleConfig{{Action: freedom.RuleAction_Allow}},
+				}),
 			},
 		},
 	}
@@ -122,7 +126,7 @@ func TestXrayDialUDPConn(t *testing.T) {
 	payload := make([]byte, size)
 	common.Must2(rand.Read(payload))
 
-	for range 2 {
+	for i := 0; i < 2; i++ {
 		if _, err := conn.Write(payload); err != nil {
 			t.Fatal(err)
 		}
@@ -131,7 +135,7 @@ func TestXrayDialUDPConn(t *testing.T) {
 	time.Sleep(time.Millisecond * 500)
 
 	receive := make([]byte, size*2)
-	for range 2 {
+	for i := 0; i < 2; i++ {
 		n, err := conn.Read(receive)
 		if err != nil {
 			t.Fatal("expect no error, but got ", err)
@@ -169,7 +173,9 @@ func TestXrayDialUDP(t *testing.T) {
 		},
 		Outbound: []*core.OutboundHandlerConfig{
 			{
-				ProxySettings: serial.ToTypedMessage(&freedom.Config{}),
+				ProxySettings: serial.ToTypedMessage(&freedom.Config{
+					FinalRules: []*freedom.FinalRuleConfig{{Action: freedom.RuleAction_Allow}},
+				}),
 			},
 		},
 	}

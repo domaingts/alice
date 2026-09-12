@@ -49,12 +49,13 @@ func TestXrayClose(t *testing.T) {
 					Listen: net.NewIPOrDomain(net.LocalHostIP),
 				}),
 				ProxySettings: serial.ToTypedMessage(&dokodemo.Config{
-					Address:  net.NewIPOrDomain(net.LocalHostIP),
-					Port:     uint32(0),
-					Networks: []net.Network{net.Network_TCP},
+					RewriteAddress:  net.NewIPOrDomain(net.LocalHostIP),
+					RewritePort:     uint32(0),
+					AllowedNetworks: []net.Network{net.Network_TCP},
 				}),
 			},
 		},
+		Outbound: []*OutboundHandlerConfig{},
 	}
 
 	cfgBytes, err := proto.Marshal(config)

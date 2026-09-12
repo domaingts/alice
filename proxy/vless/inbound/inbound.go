@@ -6,6 +6,7 @@ import (
 	gotls "crypto/tls"
 	"encoding/base64"
 	"io"
+	"reflect"
 	"strconv"
 	"strings"
 	"time"
@@ -26,7 +27,9 @@ import (
 	"github.com/xtls/xray-core/common/signal"
 	"github.com/xtls/xray-core/common/task"
 	"github.com/xtls/xray-core/core"
+	"github.com/xtls/xray-core/features"
 	"github.com/xtls/xray-core/features/dns"
+	"github.com/xtls/xray-core/features/extension"
 	feature_inbound "github.com/xtls/xray-core/features/inbound"
 	"github.com/xtls/xray-core/features/outbound"
 	"github.com/xtls/xray-core/features/policy"
@@ -43,7 +46,7 @@ import (
 )
 
 func init() {
-	common.Must(common.RegisterConfig((*Config)(nil), func(ctx context.Context, config any) (any, error) {
+	common.Must(common.RegisterConfig((*Config)(nil), func(ctx context.Context, config interface{}) (interface{}, error) {
 		var dc dns.Client
 		if err := core.RequireFeatures(ctx, func(d dns.Client) error {
 			dc = d
@@ -55,7 +58,7 @@ func init() {
 		c := config.(*Config)
 
 		validator := new(vless.MemoryValidator)
-		for _, user := range c.Clients {
+		for _, user := range c.Users {
 			u, err := user.ToMemoryUser()
 			if err != nil {
 				return nil, errors.New("failed to get VLESS user").Base(err).AtError()
@@ -77,6 +80,7 @@ type Handler struct {
 	validator              vless.Validator
 	decryption             *encryption.ServerInstance
 	outboundHandlerManager outbound.Manager
+	observer               features.Feature
 	defaultDispatcher      routing.Dispatcher
 	ctx                    context.Context
 	fallbacks              map[string]map[string]map[string]*Fallback // or nil
@@ -92,6 +96,7 @@ func New(ctx context.Context, config *Config, dc dns.Client, validator vless.Val
 		stats:                  v.GetFeature(stats.ManagerType()).(stats.Manager),
 		validator:              validator,
 		outboundHandlerManager: v.GetFeature(outbound.ManagerType()).(outbound.Manager),
+		observer:               v.GetFeature(extension.ObservatoryType()),
 		defaultDispatcher:      v.GetFeature(routing.DispatcherType()).(routing.Dispatcher),
 		ctx:                    ctx,
 	}
@@ -379,7 +384,10 @@ func (h *Handler) Process(ctx context.Context, network net.Network, connection s
 					firstBytes := first.Bytes()
 					for i := 4; i <= 8; i++ { // 5 -> 9
 						if firstBytes[i] == '/' && firstBytes[i-1] == ' ' {
-							search := min(len(firstBytes), 64) // up to about 60
+							search := len(firstBytes)
+							if search > 64 {
+								search = 64 // up to about 60
+							}
 							for j := i + 1; j < search; j++ {
 								k := firstBytes[j]
 								if k == '\r' || k == '\n' { // avoid logging \r or \n
@@ -552,28 +560,30 @@ func (h *Handler) Process(ctx context.Context, network net.Network, connection s
 				inbound.CanSpliceCopy = 3
 				fallthrough // we will break Mux connections that contain TCP requests
 			case protocol.RequestCommandTCP:
-				var p unsafe.Pointer
-				var t vless.Offset
+				var t reflect.Type
+				var p uintptr
 				if commonConn, ok := connection.(*encryption.CommonConn); ok {
 					if _, ok := commonConn.Conn.(*encryption.XorConn); ok || !proxy.IsRAWTransportWithoutSecurity(iConn) {
 						inbound.CanSpliceCopy = 3 // full-random xorConn / non-RAW transport / another securityConn should not be penetrated
 					}
-					t = vless.EncryptOffset
-					p = unsafe.Pointer(commonConn)
-				} else if realityConn, ok := iConn.(*reality.Conn); ok {
-					t = vless.RealityOffset
-					p = unsafe.Pointer(realityConn.Conn)
+					t = reflect.TypeOf(commonConn).Elem()
+					p = uintptr(unsafe.Pointer(commonConn))
 				} else if tlsConn, ok := iConn.(*tls.Conn); ok {
 					if tlsConn.ConnectionState().Version != gotls.VersionTLS13 {
 						return errors.New(`failed to use `+requestAddons.Flow+`, found outer tls version `, tlsConn.ConnectionState().Version).AtWarning()
 					}
-					t = vless.TLSOffset
-					p = unsafe.Pointer(tlsConn.Conn)
+					t = reflect.TypeOf(tlsConn.Conn).Elem()
+					p = uintptr(unsafe.Pointer(tlsConn.Conn))
+				} else if realityConn, ok := iConn.(*reality.Conn); ok {
+					t = reflect.TypeOf(realityConn.Conn).Elem()
+					p = uintptr(unsafe.Pointer(realityConn.Conn))
 				} else {
 					return errors.New("XTLS only supports TLS and REALITY directly for now.").AtWarning()
 				}
-				input = (*bytes.Reader)(unsafe.Add(p, t.Input()))
-				rawInput = (*bytes.Buffer)(unsafe.Add(p, t.RawInput()))
+				i, _ := t.FieldByName("input")
+				r, _ := t.FieldByName("rawInput")
+				input = (*bytes.Reader)(unsafe.Pointer(p + i.Offset))
+				rawInput = (*bytes.Buffer)(unsafe.Pointer(p + r.Offset))
 			}
 		} else {
 			return errors.New("account " + account.ID.String() + " is not able to use the flow " + requestAddons.Flow).AtWarning()
@@ -617,12 +627,14 @@ func (h *Handler) Process(ctx context.Context, network net.Network, connection s
 		if err != nil {
 			return err
 		}
-		return r.NewMux(ctx, dispatcher.WrapLink(ctx, h.policyManager, h.stats, &transport.Link{Reader: clientReader, Writer: clientWriter}))
+		return r.NewMux(ctx, dispatcher.WrapLink(ctx, h.policyManager, h.stats, &transport.Link{Reader: clientReader, Writer: clientWriter}), h.observer)
 	}
 
-	if err := dispatch.DispatchLink(ctx, request.Destination(), &transport.Link{
-		Reader: clientReader,
-		Writer: clientWriter},
+	if err := dispatch.DispatchLink(
+		ctx, request.Destination(), &transport.Link{
+			Reader: clientReader,
+			Writer: clientWriter,
+		},
 	); err != nil {
 		return errors.New("failed to dispatch request").Base(err)
 	}
@@ -639,7 +651,7 @@ func (r *Reverse) Tag() string {
 	return r.tag
 }
 
-func (r *Reverse) NewMux(ctx context.Context, link *transport.Link) error {
+func (r *Reverse) NewMux(ctx context.Context, link *transport.Link, observer features.Feature) error {
 	muxClient, err := mux.NewClientWorker(*link, mux.ClientStrategy{})
 	if err != nil {
 		return errors.New("failed to create mux client worker").Base(err).AtWarning()
@@ -649,6 +661,9 @@ func (r *Reverse) NewMux(ctx context.Context, link *transport.Link) error {
 		return errors.New("failed to create portal worker").Base(err).AtWarning()
 	}
 	r.picker.AddWorker(worker)
+	if burstObs, ok := observer.(extension.BurstObservatory); ok {
+		go burstObs.Check([]string{r.Tag()})
+	}
 	select {
 	case <-ctx.Done():
 	case <-muxClient.WaitClosed():

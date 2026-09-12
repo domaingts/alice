@@ -13,9 +13,9 @@ import (
 	"math/big"
 	"runtime"
 	"strconv"
-	"strings"
 	"time"
 
+	"github.com/pires/go-proxyproto"
 	"github.com/xtls/xray-core/app/dispatcher"
 	"github.com/xtls/xray-core/common/buf"
 	"github.com/xtls/xray-core/common/errors"
@@ -28,6 +28,7 @@ import (
 	"github.com/xtls/xray-core/proxy/vless/encryption"
 	"github.com/xtls/xray-core/transport"
 	"github.com/xtls/xray-core/transport/internet"
+	"github.com/xtls/xray-core/transport/internet/finalmask"
 	"github.com/xtls/xray-core/transport/internet/reality"
 	"github.com/xtls/xray-core/transport/internet/stat"
 	"github.com/xtls/xray-core/transport/internet/tls"
@@ -321,6 +322,7 @@ func NewVisionWriter(writer buf.Writer, trafficState *TrafficState, isUplink boo
 func (w *VisionWriter) WriteMultiBuffer(mb buf.MultiBuffer) error {
 	var isPadding *bool
 	var switchToDirectCopy *bool
+	var spliceReadyInbound *session.Inbound
 	if w.isUplink {
 		isPadding = &w.trafficState.Outbound.IsPadding
 		switchToDirectCopy = &w.trafficState.Outbound.UplinkWriterDirectCopy
@@ -332,7 +334,7 @@ func (w *VisionWriter) WriteMultiBuffer(mb buf.MultiBuffer) error {
 	if *switchToDirectCopy {
 		if inbound := session.InboundFromContext(w.ctx); inbound != nil {
 			if !w.isUplink && inbound.CanSpliceCopy == 2 {
-				inbound.CanSpliceCopy = 1
+				spliceReadyInbound = inbound
 			}
 			// if w.isUplink && w.ob != nil && w.ob.CanSpliceCopy == 2 { // TODO: enable uplink splice
 			// 	w.ob.CanSpliceCopy = 1
@@ -354,43 +356,51 @@ func (w *VisionWriter) WriteMultiBuffer(mb buf.MultiBuffer) error {
 	if *isPadding {
 		if len(mb) == 1 && mb[0] == nil {
 			mb[0] = XtlsPadding(nil, CommandPaddingContinue, &w.writeOnceUserUUID, true, w.ctx, w.testseed) // we do a long padding to hide vless header
-			return w.Writer.WriteMultiBuffer(mb)
-		}
-		isComplete := IsCompleteRecord(mb)
-		mb = ReshapeMultiBuffer(w.ctx, mb)
-		longPadding := w.trafficState.IsTLS
-		for i, b := range mb {
-			if w.trafficState.IsTLS && b.Len() >= 6 && bytes.Equal(TlsApplicationDataStart, b.BytesTo(3)) && isComplete {
-				if w.trafficState.EnableXtls {
-					*switchToDirectCopy = true
+		} else {
+			isComplete := IsCompleteRecord(mb)
+			mb = ReshapeMultiBuffer(w.ctx, mb)
+			longPadding := w.trafficState.IsTLS
+			for i, b := range mb {
+				if w.trafficState.IsTLS && b.Len() >= 6 && bytes.Equal(TlsApplicationDataStart, b.BytesTo(3)) && isComplete {
+					if w.trafficState.EnableXtls {
+						*switchToDirectCopy = true
+					}
+					var command byte = CommandPaddingContinue
+					if i == len(mb)-1 {
+						command = CommandPaddingEnd
+						if w.trafficState.EnableXtls {
+							command = CommandPaddingDirect
+						}
+					}
+					mb[i] = XtlsPadding(b, command, &w.writeOnceUserUUID, true, w.ctx, w.testseed)
+					*isPadding = false // padding going to end
+					longPadding = false
+					continue
+				} else if !w.trafficState.IsTLS12orAbove && w.trafficState.NumberOfPacketToFilter <= 1 { // For compatibility with earlier vision receiver, we finish padding 1 packet early
+					*isPadding = false
+					mb[i] = XtlsPadding(b, CommandPaddingEnd, &w.writeOnceUserUUID, longPadding, w.ctx, w.testseed)
+					break
 				}
 				var command byte = CommandPaddingContinue
-				if i == len(mb)-1 {
+				if i == len(mb)-1 && !*isPadding {
 					command = CommandPaddingEnd
 					if w.trafficState.EnableXtls {
 						command = CommandPaddingDirect
 					}
 				}
-				mb[i] = XtlsPadding(b, command, &w.writeOnceUserUUID, true, w.ctx, w.testseed)
-				*isPadding = false // padding going to end
-				longPadding = false
-				continue
-			} else if !w.trafficState.IsTLS12orAbove && w.trafficState.NumberOfPacketToFilter <= 1 { // For compatibility with earlier vision receiver, we finish padding 1 packet early
-				*isPadding = false
-				mb[i] = XtlsPadding(b, CommandPaddingEnd, &w.writeOnceUserUUID, longPadding, w.ctx, w.testseed)
-				break
+				mb[i] = XtlsPadding(b, command, &w.writeOnceUserUUID, longPadding, w.ctx, w.testseed)
 			}
-			var command byte = CommandPaddingContinue
-			if i == len(mb)-1 && !*isPadding {
-				command = CommandPaddingEnd
-				if w.trafficState.EnableXtls {
-					command = CommandPaddingDirect
-				}
-			}
-			mb[i] = XtlsPadding(b, command, &w.writeOnceUserUUID, longPadding, w.ctx, w.testseed)
 		}
 	}
-	return w.Writer.WriteMultiBuffer(mb)
+	if err := w.Writer.WriteMultiBuffer(mb); err != nil {
+		return err
+	}
+	if spliceReadyInbound != nil && spliceReadyInbound.CanSpliceCopy == 2 {
+		// Enable splice only after this write has completed to avoid racing
+		// concurrent direct writes to the same TCP connection.
+		spliceReadyInbound.CanSpliceCopy = 1
+	}
+	return nil
 }
 
 // IsCompleteRecord Is complete tls data record
@@ -459,7 +469,7 @@ func ReshapeMultiBuffer(ctx context.Context, buffer buf.MultiBuffer) buf.MultiBu
 		return buffer
 	}
 	mb2 := make(buf.MultiBuffer, 0, len(buffer)+needReshape)
-	var toPrint strings.Builder
+	toPrint := ""
 	for i, buffer1 := range buffer {
 		if buffer1.Len() >= buf.Size-21 {
 			index := int32(bytes.LastIndex(buffer1.Bytes(), TlsApplicationDataStart))
@@ -470,15 +480,15 @@ func ReshapeMultiBuffer(ctx context.Context, buffer buf.MultiBuffer) buf.MultiBu
 			buffer2.Write(buffer1.BytesFrom(index))
 			buffer1.Resize(0, index)
 			mb2 = append(mb2, buffer1, buffer2)
-			toPrint.WriteString(" " + strconv.Itoa(int(buffer1.Len())) + " " + strconv.Itoa(int(buffer2.Len())))
+			toPrint += " " + strconv.Itoa(int(buffer1.Len())) + " " + strconv.Itoa(int(buffer2.Len()))
 		} else {
 			mb2 = append(mb2, buffer1)
-			toPrint.WriteString(" " + strconv.Itoa(int(buffer1.Len())))
+			toPrint += " " + strconv.Itoa(int(buffer1.Len()))
 		}
 		buffer[i] = nil
 	}
 	buffer = buffer[:0]
-	errors.LogDebug(ctx, "ReshapeMultiBuffer ", toPrint.String())
+	errors.LogDebug(ctx, "ReshapeMultiBuffer ", toPrint)
 	return mb2
 }
 
@@ -568,7 +578,10 @@ func XtlsUnpadding(b *buf.Buffer, s *TrafficState, isUplink bool, ctx context.Co
 			}
 			*remainingCommand--
 		} else if *remainingContent > 0 {
-			len := min(b.Len(), *remainingContent)
+			len := *remainingContent
+			if b.Len() < len {
+				len = b.Len()
+			}
 			data, err := b.ReadBytes(len)
 			if err != nil {
 				return newbuffer
@@ -576,7 +589,10 @@ func XtlsUnpadding(b *buf.Buffer, s *TrafficState, isUplink bool, ctx context.Co
 			newbuffer.Write(data)
 			*remainingContent -= len
 		} else { // remainingPadding > 0
-			len := min(b.Len(), *remainingPadding)
+			len := *remainingPadding
+			if b.Len() < len {
+				len = b.Len()
+			}
 			b.Advance(len)
 			*remainingPadding -= len
 		}
@@ -625,7 +641,10 @@ func XtlsFilterTls(buffer buf.MultiBuffer, trafficState *TrafficState, ctx conte
 			}
 		}
 		if trafficState.RemainingServerHello > 0 {
-			end := min(trafficState.RemainingServerHello, b.Len())
+			end := trafficState.RemainingServerHello
+			if end > b.Len() {
+				end = b.Len()
+			}
 			trafficState.RemainingServerHello -= b.Len()
 			if bytes.Contains(b.BytesTo(end), Tls13SupportedVersions) {
 				v, ok := Tls13CipherSuiteDic[trafficState.Cipher]
@@ -650,7 +669,7 @@ func XtlsFilterTls(buffer buf.MultiBuffer, trafficState *TrafficState, ctx conte
 	}
 }
 
-// UnwrapRawConn support unwrap encryption, stats, tls, utls, reality, proxyproto, uds-wrapper conn and get raw tcp/uds conn from it
+// UnwrapRawConn support unwrap encryption, stats, mask wrappers, tls, utls, reality, proxyproto, uds-wrapper conn and get raw tcp/uds conn from it
 func UnwrapRawConn(conn net.Conn) (net.Conn, stats.Counter, stats.Counter) {
 	var readCounter, writerCounter stats.Counter
 	if conn != nil {
@@ -667,6 +686,7 @@ func UnwrapRawConn(conn net.Conn) (net.Conn, stats.Counter, stats.Counter) {
 			readCounter = statConn.ReadCounter
 			writerCounter = statConn.WriteCounter
 		}
+
 		if !isEncryption { // avoids double penetration
 			if xc, ok := conn.(*tls.Conn); ok {
 				conn = xc.NetConn()
@@ -677,6 +697,13 @@ func UnwrapRawConn(conn net.Conn) (net.Conn, stats.Counter, stats.Counter) {
 			} else if realityUConn, ok := conn.(*reality.UConn); ok {
 				conn = realityUConn.NetConn()
 			}
+		}
+
+		conn = finalmask.UnwrapTcpMask(conn)
+
+		if pc, ok := conn.(*proxyproto.Conn); ok {
+			conn = pc.Raw()
+			// 8192 > 4096, there is no need to process pc's bufReader
 		}
 		if uc, ok := conn.(*internet.UnixConnWrapper); ok {
 			conn = uc.UnixConn
@@ -716,7 +743,7 @@ func CopyRawConnIfExist(ctx context.Context, readerConn net.Conn, writerConn net
 	for {
 		inbound := session.InboundFromContext(ctx)
 		outbounds := session.OutboundsFromContext(ctx)
-		var splice = inbound.CanSpliceCopy == 1
+		splice := inbound.CanSpliceCopy == 1
 		for _, ob := range outbounds {
 			if ob.CanSpliceCopy != 1 {
 				splice = false
@@ -726,7 +753,6 @@ func CopyRawConnIfExist(ctx context.Context, readerConn net.Conn, writerConn net
 			errors.LogDebug(ctx, "CopyRawConn splice")
 			statWriter, _ := writer.(*dispatcher.SizeStatWriter)
 			//runtime.Gosched() // necessary
-			time.Sleep(time.Millisecond)     // without this, there will be a rare ssl error for freedom splice
 			timer.SetTimeout(24 * time.Hour) // prevent leak, just in case
 			if inTimer != nil {
 				inTimer.SetTimeout(24 * time.Hour)
@@ -775,7 +801,9 @@ func readV(ctx context.Context, reader buf.Reader, writer buf.Writer, timer sign
 
 func IsRAWTransportWithoutSecurity(conn stat.Connection) bool {
 	iConn := stat.TryUnwrapStatsConn(conn)
+	iConn = finalmask.UnwrapTcpMask(iConn)
+	_, ok1 := iConn.(*proxyproto.Conn)
 	_, ok2 := iConn.(*net.TCPConn)
 	_, ok3 := iConn.(*internet.UnixConnWrapper)
-	return false || ok2 || ok3
+	return ok1 || ok2 || ok3
 }

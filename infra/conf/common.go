@@ -3,6 +3,7 @@ package conf
 import (
 	"encoding/json"
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
 
@@ -64,6 +65,9 @@ func (v *Address) UnmarshalJSON(data []byte) error {
 }
 
 func (v *Address) Build() *net.IPOrDomain {
+	if v == nil {
+		return nil
+	}
 	return net.NewIPOrDomain(v.Address)
 }
 
@@ -199,7 +203,7 @@ func (v *PortRange) UnmarshalJSON(data []byte) error {
 	if err == nil {
 		v.From = uint32(from)
 		v.To = uint32(to)
-		if v.From > v.To {
+		if v.From > v.To || v.To > math.MaxUint16 {
 			return errors.New("invalid port range ", v.From, " -> ", v.To)
 		}
 		return nil
@@ -248,8 +252,8 @@ func (list *PortList) UnmarshalJSON(data []byte) error {
 			return errors.New("invalid port: ", string(data)).Base(err2)
 		}
 	}
-	rangelist := strings.SplitSeq(listStr, ",")
-	for rangeStr := range rangelist {
+	rangelist := strings.Split(listStr, ",")
+	for _, rangeStr := range rangelist {
 		trimmed := strings.TrimSpace(rangeStr)
 		if len(trimmed) > 0 {
 			if strings.Contains(trimmed, "-") || strings.Contains(trimmed, "env:") {

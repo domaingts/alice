@@ -6,7 +6,7 @@ import (
 )
 
 func init() {
-	common.Must(internet.RegisterProtocolConfigCreator(protocolName, func() any {
+	common.Must(internet.RegisterProtocolConfigCreator(protocolName, func() interface{} {
 		return new(Config)
 	}))
 }

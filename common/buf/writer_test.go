@@ -78,7 +78,7 @@ func TestDiscardBytesMultiBuffer(t *testing.T) {
 
 func TestWriterInterface(t *testing.T) {
 	{
-		var writer any = (*BufferToBytesWriter)(nil)
+		var writer interface{} = (*BufferToBytesWriter)(nil)
 		switch writer.(type) {
 		case Writer, io.Writer, io.ReaderFrom:
 		default:
@@ -87,7 +87,7 @@ func TestWriterInterface(t *testing.T) {
 	}
 
 	{
-		var writer any = (*BufferedWriter)(nil)
+		var writer interface{} = (*BufferedWriter)(nil)
 		switch writer.(type) {
 		case Writer, io.Writer, io.ReaderFrom, io.ByteWriter:
 		default:

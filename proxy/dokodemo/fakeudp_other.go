@@ -1,4 +1,5 @@
-//go:build !linux
+//go:build !linux && !openbsd
+// +build !linux,!openbsd
 
 package dokodemo
 

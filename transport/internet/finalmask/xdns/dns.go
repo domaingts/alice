@@ -46,7 +46,13 @@ var (
 
 const (
 	// https://tools.ietf.org/html/rfc1035#section-3.2.2
+	RRTypeA = 1
+	// https://tools.ietf.org/html/rfc1035#section-3.2.2
+	RRTypeCNAME = 5
+	// https://tools.ietf.org/html/rfc1035#section-3.2.2
 	RRTypeTXT = 16
+	// https://tools.ietf.org/html/rfc3596#section-2.1
+	RRTypeAAAA = 28
 	// https://tools.ietf.org/html/rfc6891#section-6.1.1
 	RRTypeOPT = 41
 
@@ -142,7 +148,7 @@ func (name Name) TrimSuffix(suffix Name) (Name, bool) {
 	}
 	split := len(name) - len(suffix)
 	fore, aft := name[:split], name[split:]
-	for i := range aft {
+	for i := 0; i < len(aft); i++ {
 		if !bytes.Equal(bytes.ToLower(aft[i]), bytes.ToLower(suffix[i])) {
 			return nil, false
 		}

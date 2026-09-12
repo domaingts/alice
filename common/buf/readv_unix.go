@@ -1,4 +1,5 @@
 //go:build illumos
+// +build illumos
 
 package buf
 

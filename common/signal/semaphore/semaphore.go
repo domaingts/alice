@@ -10,7 +10,7 @@ func New(n int) *Instance {
 	s := &Instance{
 		token: make(chan struct{}, n),
 	}
-	for range n {
+	for i := 0; i < n; i++ {
 		s.token <- struct{}{}
 	}
 	return s

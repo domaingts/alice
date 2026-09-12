@@ -33,7 +33,7 @@ func New(ctx context.Context, config *proxyman.OutboundConfig) (*Manager, error)
 }
 
 // Type implements common.HasType.
-func (m *Manager) Type() any {
+func (m *Manager) Type() interface{} {
 	return outbound.ManagerType()
 }
 
@@ -162,7 +162,6 @@ func (m *Manager) ListHandlers(ctx context.Context) []outbound.Handler {
 
 // Select implements outbound.HandlerSelector.
 func (m *Manager) Select(selectors []string) []string {
-
 	key := strings.Join(selectors, ",")
 	if cache, ok := m.tagsCache.Load(key); ok {
 		return cache.([]string)
@@ -189,10 +188,10 @@ func (m *Manager) Select(selectors []string) []string {
 }
 
 func init() {
-	common.Must(common.RegisterConfig((*proxyman.OutboundConfig)(nil), func(ctx context.Context, config any) (any, error) {
+	common.Must(common.RegisterConfig((*proxyman.OutboundConfig)(nil), func(ctx context.Context, config interface{}) (interface{}, error) {
 		return New(ctx, config.(*proxyman.OutboundConfig))
 	}))
-	common.Must(common.RegisterConfig((*core.OutboundHandlerConfig)(nil), func(ctx context.Context, config any) (any, error) {
+	common.Must(common.RegisterConfig((*core.OutboundHandlerConfig)(nil), func(ctx context.Context, config interface{}) (interface{}, error) {
 		return NewHandler(ctx, config.(*core.OutboundHandlerConfig))
 	}))
 }

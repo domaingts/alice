@@ -39,7 +39,7 @@ type Route interface {
 // RouterType return the type of Router interface. Can be used to implement common.HasType.
 //
 // xray:api:stable
-func RouterType() any {
+func RouterType() interface{} {
 	return (*Router)(nil)
 }
 
@@ -47,7 +47,7 @@ func RouterType() any {
 type DefaultRouter struct{}
 
 // Type implements common.HasType.
-func (DefaultRouter) Type() any {
+func (DefaultRouter) Type() interface{} {
 	return RouterType()
 }
 

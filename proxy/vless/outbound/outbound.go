@@ -5,12 +5,14 @@ import (
 	"context"
 	gotls "crypto/tls"
 	"encoding/base64"
+	"reflect"
 	"strings"
 	"sync"
 	"time"
 	"unsafe"
 
 	utls "github.com/refraction-networking/utls"
+	proxymanConfig "github.com/xtls/xray-core/app/proxyman"
 	proxyman "github.com/xtls/xray-core/app/proxyman/outbound"
 	"github.com/xtls/xray-core/app/reverse"
 	"github.com/xtls/xray-core/common"
@@ -41,7 +43,7 @@ import (
 )
 
 func init() {
-	common.Must(common.RegisterConfig((*Config)(nil), func(ctx context.Context, config any) (any, error) {
+	common.Must(common.RegisterConfig((*Config)(nil), func(ctx context.Context, config interface{}) (interface{}, error) {
 		return New(ctx, config.(*Config))
 	}))
 }
@@ -96,14 +98,25 @@ func New(ctx context.Context, config *Config) (*Handler, error) {
 	}
 
 	if a.Reverse != nil {
+		rvsCtx := session.ContextWithInbound(ctx, &session.Inbound{
+			Tag:  a.Reverse.Tag,
+			Name: "vless-reverse",
+			User: handler.server.User, // TODO: email
+		})
+		if sc := a.Reverse.Sniffing; sc != nil && sc.Enabled {
+			request, err := proxymanConfig.BuildSniffingRequest(sc)
+			if err != nil {
+				return nil, errors.New("failed to build reverse sniffing request").Base(err).AtError()
+			}
+			rvsCtx = session.ContextWithContent(rvsCtx, &session.Content{
+				SniffingRequest: request,
+			})
+		}
 		handler.reverse = &Reverse{
 			tag:        a.Reverse.Tag,
 			dispatcher: v.GetFeature(routing.DispatcherType()).(routing.Dispatcher),
-			ctx: session.ContextWithInbound(ctx, &session.Inbound{
-				Tag:  a.Reverse.Tag,
-				User: handler.server.User, // TODO: email
-			}),
-			handler: handler,
+			ctx:        rvsCtx,
+			handler:    handler,
 		}
 		handler.reverse.monitorTask = &task.Periodic{
 			Execute:  handler.reverse.monitor,
@@ -189,8 +202,6 @@ func (h *Handler) Process(ctx context.Context, link *transport.Link, dialer inte
 	}
 	defer conn.Close()
 
-	ob.Conn = conn // for Vision's pre-connect
-
 	iConn := stat.TryUnwrapStatsConn(conn)
 	target := ob.Target
 	errors.LogInfo(ctx, "tunneling request to ", target, " via ", rec.Destination.NetAddr())
@@ -250,28 +261,30 @@ func (h *Handler) Process(ctx context.Context, link *transport.Link, dialer inte
 		case protocol.RequestCommandMux:
 			fallthrough // let server break Mux connections that contain TCP requests
 		case protocol.RequestCommandTCP, protocol.RequestCommandRvs:
-			var t vless.Offset
-			var p unsafe.Pointer
+			var t reflect.Type
+			var p uintptr
 			if commonConn, ok := conn.(*encryption.CommonConn); ok {
 				if _, ok := commonConn.Conn.(*encryption.XorConn); ok || !proxy.IsRAWTransportWithoutSecurity(iConn) {
 					ob.CanSpliceCopy = 3 // full-random xorConn / non-RAW transport / another securityConn should not be penetrated
 				}
-				t = vless.EncryptOffset
-				p = unsafe.Pointer(commonConn)
+				t = reflect.TypeOf(commonConn).Elem()
+				p = uintptr(unsafe.Pointer(commonConn))
 			} else if tlsConn, ok := iConn.(*tls.Conn); ok {
-				t = vless.TLSOffset
-				p = unsafe.Pointer(tlsConn.Conn)
+				t = reflect.TypeOf(tlsConn.Conn).Elem()
+				p = uintptr(unsafe.Pointer(tlsConn.Conn))
 			} else if utlsConn, ok := iConn.(*tls.UConn); ok {
-				t = vless.UtlsOffset
-				p = unsafe.Pointer(utlsConn.Conn)
+				t = reflect.TypeOf(utlsConn.Conn).Elem()
+				p = uintptr(unsafe.Pointer(utlsConn.Conn))
 			} else if realityConn, ok := iConn.(*reality.UConn); ok {
-				t = vless.RealityOffset
-				p = unsafe.Pointer(realityConn.Conn)
+				t = reflect.TypeOf(realityConn.Conn).Elem()
+				p = uintptr(unsafe.Pointer(realityConn.Conn))
 			} else {
 				return errors.New("XTLS only supports TLS and REALITY directly for now.").AtWarning()
 			}
-			input = (*bytes.Reader)(unsafe.Add(p, t.Input()))
-			rawInput = (*bytes.Buffer)(unsafe.Add(p, t.RawInput()))
+			i, _ := t.FieldByName("input")
+			r, _ := t.FieldByName("rawInput")
+			input = (*bytes.Reader)(unsafe.Pointer(p + i.Offset))
+			rawInput = (*bytes.Buffer)(unsafe.Pointer(p + r.Offset))
 		default:
 			panic("unknown VLESS request command")
 		}

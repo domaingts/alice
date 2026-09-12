@@ -21,10 +21,10 @@ const (
 )
 
 type AccessMessage struct {
-	From   any
-	To     any
+	From   interface{}
+	To     interface{}
 	Status AccessStatus
-	Reason any
+	Reason interface{}
 	Email  string
 	Detour string
 }

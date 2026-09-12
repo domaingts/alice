@@ -110,7 +110,7 @@ func TestPipeWriteMultiThread(t *testing.T) {
 	pReader, pWriter := New(WithSizeLimit(0))
 
 	var errg errgroup.Group
-	for range 10 {
+	for i := 0; i < 10; i++ {
 		errg.Go(func() error {
 			b := buf.New()
 			b.WriteString("abcd")
@@ -129,12 +129,12 @@ func TestPipeWriteMultiThread(t *testing.T) {
 }
 
 func TestInterfaces(t *testing.T) {
-	_ = (buf.Reader)(new(Reader))
-	_ = (buf.TimeoutReader)(new(Reader))
+	_ = buf.Reader(new(Reader))
+	_ = buf.TimeoutReader(new(Reader))
 
-	_ = (common.Interruptible)(new(Reader))
-	_ = (common.Interruptible)(new(Writer))
-	_ = (common.Closable)(new(Writer))
+	_ = common.Interruptible(new(Reader))
+	_ = common.Interruptible(new(Writer))
+	_ = common.Closable(new(Writer))
 }
 
 func BenchmarkPipeReadWrite(b *testing.B) {

@@ -3,7 +3,6 @@ package core
 import (
 	"context"
 	"reflect"
-	"slices"
 	"sync"
 
 	"github.com/xtls/xray-core/common"
@@ -27,13 +26,13 @@ type Server interface {
 }
 
 // ServerType returns the type of the server.
-func ServerType() any {
+func ServerType() interface{} {
 	return (*Instance)(nil)
 }
 
 type resolution struct {
 	deps     []reflect.Type
-	callback any
+	callback interface{}
 }
 
 func getFeature(allFeatures []features.Feature, t reflect.Type) features.Feature {
@@ -66,9 +65,9 @@ func (r *resolution) callbackResolution(allFeatures []features.Feature) error {
 	var err error
 	ret := callback.Call(input)
 	errInterface := reflect.TypeOf((*error)(nil)).Elem()
-	for _, r := range slices.Backward(ret) {
-		if r.Type() == errInterface {
-			v := r.Interface()
+	for i := len(ret) - 1; i >= 0; i-- {
+		if ret[i].Type() == errInterface {
+			v := ret[i].Interface()
 			if v != nil {
 				err = v.(error)
 			}
@@ -150,14 +149,14 @@ func addOutboundHandlers(server *Instance, configs []*OutboundHandlerConfig) err
 
 // RequireFeatures is a helper function to require features from Instance in context.
 // See Instance.RequireFeatures for more information.
-func RequireFeatures(ctx context.Context, callback any) error {
+func RequireFeatures(ctx context.Context, callback interface{}) error {
 	v := MustFromContext(ctx)
 	return v.RequireFeatures(callback, false)
 }
 
 // OptionalFeatures is a helper function to aquire features from Instance in context.
 // See Instance.RequireFeatures for more information.
-func OptionalFeatures(ctx context.Context, callback any) error {
+func OptionalFeatures(ctx context.Context, callback interface{}) error {
 	v := MustFromContext(ctx)
 	return v.RequireFeatures(callback, true)
 }
@@ -188,6 +187,9 @@ func NewWithContext(ctx context.Context, config *Config) (*Instance, error) {
 }
 
 func initInstanceWithConfig(config *Config, server *Instance) (bool, error) {
+	if err := platform.ReloadEnvSettings(); err != nil {
+		return true, errors.New("failed to reload environment settings").Base(err)
+	}
 	server.ctx = context.WithValue(server.ctx, "cone",
 		platform.NewEnvFlag(platform.UseCone).GetValue(func() string { return "" }) != "true")
 
@@ -208,7 +210,7 @@ func initInstanceWithConfig(config *Config, server *Instance) (bool, error) {
 	}
 
 	essentialFeatures := []struct {
-		Type     any
+		Type     interface{}
 		Instance features.Feature
 	}{
 		{dns.ClientType(), localdns.New()},
@@ -251,7 +253,7 @@ func initInstanceWithConfig(config *Config, server *Instance) (bool, error) {
 }
 
 // Type implements common.HasType.
-func (s *Instance) Type() any {
+func (s *Instance) Type() interface{} {
 	return ServerType()
 }
 
@@ -262,7 +264,7 @@ func (s *Instance) Close() error {
 
 	s.running = false
 
-	var errs []any
+	var errs []interface{}
 	for _, f := range s.features {
 		if err := f.Close(); err != nil {
 			errs = append(errs, err)
@@ -277,7 +279,7 @@ func (s *Instance) Close() error {
 
 // RequireFeatures registers a callback, which will be called when all dependent features are registered.
 // The callback must be a func(). All its parameters must be features.Feature.
-func (s *Instance) RequireFeatures(callback any, optional bool) error {
+func (s *Instance) RequireFeatures(callback interface{}, optional bool) error {
 	callbackType := reflect.TypeOf(callback)
 	if callbackType.Kind() != reflect.Func {
 		panic("not a function")
@@ -374,7 +376,7 @@ func (s *Instance) AddFeature(feature features.Feature) error {
 }
 
 // GetFeature returns a feature of the given type, or nil if such feature is not registered.
-func (s *Instance) GetFeature(featureType any) features.Feature {
+func (s *Instance) GetFeature(featureType interface{}) features.Feature {
 	return getFeature(s.features, reflect.TypeOf(featureType))
 }
 

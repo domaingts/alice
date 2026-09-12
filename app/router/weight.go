@@ -77,8 +77,8 @@ func (s *WeightManager) findValue(tag string) float64 {
 
 func (s *WeightManager) getMatch(tag, find string, isRegexp bool) string {
 	if !isRegexp {
-		found := strings.Contains(tag, find)
-		if !found {
+		idx := strings.Index(tag, find)
+		if idx < 0 {
 			return ""
 		}
 		return find

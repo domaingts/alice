@@ -9,7 +9,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/sagernet/sing/common/control"
+	"github.com/pires/go-proxyproto"
 	"github.com/xtls/xray-core/common/errors"
 	"github.com/xtls/xray-core/common/net"
 )
@@ -17,10 +17,10 @@ import (
 var effectiveListener = DefaultListener{}
 
 type DefaultListener struct {
-	controllers []control.Func
+	controllers []func(network, address string, c syscall.RawConn) error
 }
 
-func getControlFunc(ctx context.Context, sockopt *SocketConfig, controllers []control.Func) func(network, address string, c syscall.RawConn) error {
+func getControlFunc(ctx context.Context, sockopt *SocketConfig, controllers []func(network, address string, c syscall.RawConn) error) func(network, address string, c syscall.RawConn) error {
 	return func(network, address string, c syscall.RawConn) error {
 		return c.Control(func(fd uintptr) {
 			for _, controller := range controllers {
@@ -165,7 +165,12 @@ func (dl *DefaultListener) Listen(ctx context.Context, addr net.Addr, sockopt *S
 		}
 	}
 
-	return callback(lc.Listen(ctx, network, address))
+	l, err = callback(lc.Listen(ctx, network, address))
+	if err == nil && sockopt != nil && sockopt.AcceptProxyProtocol {
+		policyFunc := func(upstream net.Addr) (proxyproto.Policy, error) { return proxyproto.REQUIRE, nil }
+		l = &proxyproto.Listener{Listener: l, Policy: policyFunc}
+	}
+	return l, err
 }
 
 func (dl *DefaultListener) ListenPacket(ctx context.Context, addr net.Addr, sockopt *SocketConfig) (net.PacketConn, error) {
@@ -180,7 +185,7 @@ func (dl *DefaultListener) ListenPacket(ctx context.Context, addr net.Addr, sock
 // The controller can be used to operate on file descriptors before they are put into use.
 //
 // xray:api:beta
-func RegisterListenerController(controller control.Func) error {
+func RegisterListenerController(controller func(network, address string, c syscall.RawConn) error) error {
 	if controller == nil {
 		return errors.New("nil listener controller")
 	}

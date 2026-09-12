@@ -2,7 +2,6 @@ package burst
 
 import (
 	"context"
-
 	"sync"
 
 	"github.com/xtls/xray-core/app/observatory"
@@ -32,6 +31,10 @@ func (o *Observer) GetObservation(ctx context.Context) (proto.Message, error) {
 	return &observatory.ObservationResult{Status: o.createResult()}, nil
 }
 
+func (o *Observer) Check(tag []string) {
+	o.hp.Check(tag)
+}
+
 func (o *Observer) createResult() []*observatory.OutboundStatus {
 	var result []*observatory.OutboundStatus
 	o.hp.access.Lock()
@@ -58,7 +61,7 @@ func (o *Observer) createResult() []*observatory.OutboundStatus {
 	return result
 }
 
-func (o *Observer) Type() any {
+func (o *Observer) Type() interface{} {
 	return extension.ObservatoryType()
 }
 
@@ -68,7 +71,6 @@ func (o *Observer) Start() error {
 		o.hp.StartScheduler(func() ([]string, error) {
 			hs, ok := o.ohm.(outbound.HandlerSelector)
 			if !ok {
-
 				return nil, errors.New("outbound.Manager is not a HandlerSelector")
 			}
 
@@ -107,7 +109,7 @@ func New(ctx context.Context, config *Config) (*Observer, error) {
 }
 
 func init() {
-	common.Must(common.RegisterConfig((*Config)(nil), func(ctx context.Context, config any) (any, error) {
+	common.Must(common.RegisterConfig((*Config)(nil), func(ctx context.Context, config interface{}) (interface{}, error) {
 		return New(ctx, config.(*Config))
 	}))
 }

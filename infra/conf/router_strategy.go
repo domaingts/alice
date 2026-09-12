@@ -17,17 +17,14 @@ const (
 	strategyLeastLoad  string = "leastload"
 )
 
-var (
-	strategyConfigLoader = NewJSONConfigLoader(ConfigCreatorCache{
-		strategyRandom:     func() any { return new(strategyEmptyConfig) },
-		strategyLeastPing:  func() any { return new(strategyEmptyConfig) },
-		strategyRoundRobin: func() any { return new(strategyEmptyConfig) },
-		strategyLeastLoad:  func() any { return new(strategyLeastLoadConfig) },
-	}, "type", "settings")
-)
+var strategyConfigLoader = NewJSONConfigLoader(ConfigCreatorCache{
+	strategyRandom:     func() interface{} { return new(strategyEmptyConfig) },
+	strategyLeastPing:  func() interface{} { return new(strategyEmptyConfig) },
+	strategyRoundRobin: func() interface{} { return new(strategyEmptyConfig) },
+	strategyLeastLoad:  func() interface{} { return new(strategyLeastLoadConfig) },
+}, "type", "settings")
 
-type strategyEmptyConfig struct {
-}
+type strategyEmptyConfig struct{}
 
 func (v *strategyEmptyConfig) Build() (proto.Message, error) {
 	return nil, nil
@@ -46,8 +43,8 @@ type strategyLeastLoadConfig struct {
 	Tolerance float64 `json:"tolerance,omitempty"`
 }
 
-// healthCheckSettings holds settings for health Checker
-type healthCheckSettings struct {
+// HealthCheckSettings holds settings for health Checker
+type HealthCheckSettings struct {
 	Destination   string            `json:"destination"`
 	Connectivity  string            `json:"connectivity"`
 	Interval      duration.Duration `json:"interval"`
@@ -56,7 +53,7 @@ type healthCheckSettings struct {
 	HttpMethod    string            `json:"httpMethod"`
 }
 
-func (h healthCheckSettings) Build() (proto.Message, error) {
+func (h HealthCheckSettings) Build() (proto.Message, error) {
 	var httpMethod string
 	if h.HttpMethod == "" {
 		httpMethod = "HEAD"
@@ -84,8 +81,14 @@ func (v *strategyLeastLoadConfig) Build() (proto.Message, error) {
 	if config.Tolerance > 1 {
 		config.Tolerance = 1
 	}
-	config.Expected = max(v.Expected, 0)
-	config.MaxRTT = max(int64(v.MaxRTT), 0)
+	config.Expected = v.Expected
+	if config.Expected < 0 {
+		config.Expected = 0
+	}
+	config.MaxRTT = int64(v.MaxRTT)
+	if config.MaxRTT < 0 {
+		config.MaxRTT = 0
+	}
 	config.Baselines = make([]int64, 0)
 	for _, b := range v.Baselines {
 		if b <= 0 {

@@ -76,7 +76,10 @@ func absInt(x int) int {
 }
 
 func GenerateTokenishPaddingBase62(targetHuffmanBytes int) string {
-	n := max(int(math.Ceil(float64(targetHuffmanBytes)/avgHuffmanBytesPerCharBase62)), 1)
+	n := int(math.Ceil(float64(targetHuffmanBytes) / avgHuffmanBytesPerCharBase62))
+	if n < 1 {
+		n = 1
+	}
 
 	randBase62Str, ok := randStringFromCharset(n, charsetBase62)
 	if !ok {
@@ -87,7 +90,7 @@ func GenerateTokenishPaddingBase62(targetHuffmanBytes int) string {
 	adjustChar := byte('X')
 
 	// Adjust until close enough
-	for range maxIter {
+	for iter := 0; iter < maxIter; iter++ {
 		currentLength := int(hpack.HuffmanEncodeLength(randBase62Str))
 		diff := currentLength - targetHuffmanBytes
 
@@ -153,6 +156,17 @@ func ApplyPaddingToCookie(req *http.Request, name, value string) {
 	})
 }
 
+func ApplyPaddingToResponseCookie(writer http.ResponseWriter, name, value string) {
+	if name == "" || value == "" {
+		return
+	}
+	http.SetCookie(writer, &http.Cookie{
+		Name:  name,
+		Value: value,
+		Path:  "/",
+	})
+}
+
 func ApplyPaddingToQuery(u *url.URL, key, value string) {
 	if u == nil || key == "" || value == "" {
 		return
@@ -162,15 +176,15 @@ func ApplyPaddingToQuery(u *url.URL, key, value string) {
 	u.RawQuery = q.Encode()
 }
 
-func (c *Config) GetNormalizedXPaddingBytes() RangeConfig {
+func (c *Config) GetNormalizedXPaddingBytes() *RangeConfig {
 	if c.XPaddingBytes == nil || c.XPaddingBytes.To == 0 {
-		return RangeConfig{
+		return &RangeConfig{
 			From: 100,
 			To:   1000,
 		}
 	}
 
-	return *c.XPaddingBytes
+	return c.XPaddingBytes
 }
 
 func (c *Config) ApplyXPaddingToHeader(h http.Header, config XPaddingConfig) {
@@ -215,6 +229,22 @@ func (c *Config) ApplyXPaddingToRequest(req *http.Request, config XPaddingConfig
 		ApplyPaddingToCookie(req, config.Placement.Key, paddingValue)
 	case PlacementQuery:
 		ApplyPaddingToQuery(req.URL, config.Placement.Key, paddingValue)
+	}
+}
+
+func (c *Config) ApplyXPaddingToResponse(writer http.ResponseWriter, config XPaddingConfig) {
+	placement := config.Placement.Placement
+
+	if placement == PlacementHeader || placement == PlacementQueryInHeader {
+		c.ApplyXPaddingToHeader(writer.Header(), config)
+		return
+	}
+
+	paddingValue := GeneratePadding(config.Method, config.Length)
+
+	switch placement {
+	case PlacementCookie:
+		ApplyPaddingToResponseCookie(writer, config.Placement.Key, paddingValue)
 	}
 }
 

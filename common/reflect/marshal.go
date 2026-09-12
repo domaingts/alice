@@ -12,7 +12,7 @@ import (
 	"github.com/xtls/xray-core/infra/conf"
 )
 
-func MarshalToJson(v any, insertTypeInfo bool) (string, bool) {
+func MarshalToJson(v interface{}, insertTypeInfo bool) (string, bool) {
 	if itf := marshalInterface(v, true, insertTypeInfo); itf != nil {
 		if b, err := JSONMarshalWithoutEscape(itf); err == nil {
 			return string(b[:]), true
@@ -21,7 +21,7 @@ func MarshalToJson(v any, insertTypeInfo bool) (string, bool) {
 	return "", false
 }
 
-func JSONMarshalWithoutEscape(t any) ([]byte, error) {
+func JSONMarshalWithoutEscape(t interface{}) ([]byte, error) {
 	buffer := &bytes.Buffer{}
 	encoder := json.NewEncoder(buffer)
 	encoder.SetIndent("", "    ")
@@ -30,7 +30,7 @@ func JSONMarshalWithoutEscape(t any) ([]byte, error) {
 	return buffer.Bytes(), err
 }
 
-func marshalTypedMessage(v *cserial.TypedMessage, ignoreNullValue bool, insertTypeInfo bool) any {
+func marshalTypedMessage(v *cserial.TypedMessage, ignoreNullValue bool, insertTypeInfo bool) interface{} {
 	if v == nil {
 		return nil
 	}
@@ -39,14 +39,14 @@ func marshalTypedMessage(v *cserial.TypedMessage, ignoreNullValue bool, insertTy
 		return nil
 	}
 	r := marshalInterface(tmsg, ignoreNullValue, insertTypeInfo)
-	if msg, ok := r.(map[string]any); ok && insertTypeInfo {
+	if msg, ok := r.(map[string]interface{}); ok && insertTypeInfo {
 		msg["_TypedMessage_"] = v.Type
 	}
 	return r
 }
 
-func marshalSlice(v reflect.Value, ignoreNullValue bool, insertTypeInfo bool) any {
-	r := make([]any, 0)
+func marshalSlice(v reflect.Value, ignoreNullValue bool, insertTypeInfo bool) interface{} {
+	r := make([]interface{}, 0)
 	for i := 0; i < v.Len(); i++ {
 		rv := v.Index(i)
 		if rv.CanInterface() {
@@ -74,7 +74,7 @@ func isNullValue(f reflect.StructField, rv reflect.Value) bool {
 
 func toJsonName(f reflect.StructField) string {
 	if tags := f.Tag.Get("protobuf"); len(tags) > 0 {
-		for tag := range strings.SplitSeq(tags, ",") {
+		for _, tag := range strings.Split(tags, ",") {
 			if before, after, ok := strings.Cut(tag, "="); ok && before == "json" {
 				return after
 			}
@@ -90,8 +90,8 @@ func toJsonName(f reflect.StructField) string {
 	return f.Name
 }
 
-func marshalStruct(v reflect.Value, ignoreNullValue bool, insertTypeInfo bool) any {
-	r := make(map[string]any)
+func marshalStruct(v reflect.Value, ignoreNullValue bool, insertTypeInfo bool) interface{} {
+	r := make(map[string]interface{})
 	t := v.Type()
 	for i := 0; i < v.NumField(); i++ {
 		rv := v.Field(i)
@@ -108,10 +108,10 @@ func marshalStruct(v reflect.Value, ignoreNullValue bool, insertTypeInfo bool) a
 	return r
 }
 
-func marshalMap(v reflect.Value, ignoreNullValue bool, insertTypeInfo bool) any {
+func marshalMap(v reflect.Value, ignoreNullValue bool, insertTypeInfo bool) interface{} {
 	// policy.level is map[uint32] *struct
 	kt := v.Type().Key()
-	vt := reflect.TypeFor[*any]()
+	vt := reflect.TypeOf((*interface{})(nil))
 	mt := reflect.MapOf(kt, vt)
 	r := reflect.MakeMap(mt)
 	for _, key := range v.MapKeys() {
@@ -127,7 +127,7 @@ func marshalMap(v reflect.Value, ignoreNullValue bool, insertTypeInfo bool) any 
 	return r.Interface()
 }
 
-func marshalIString(v any) (r string, ok bool) {
+func marshalIString(v interface{}) (r string, ok bool) {
 	defer func() {
 		if err := recover(); err != nil {
 			r = ""
@@ -140,7 +140,7 @@ func marshalIString(v any) (r string, ok bool) {
 	return "", false
 }
 
-func serializePortList(portList *cnet.PortList) (any, bool) {
+func serializePortList(portList *cnet.PortList) (interface{}, bool) {
 	if portList == nil {
 		return nil, false
 	}
@@ -163,7 +163,7 @@ func serializePortList(portList *cnet.PortList) (any, bool) {
 	return strings.Join(r, ","), true
 }
 
-func marshalKnownType(v any, ignoreNullValue bool, insertTypeInfo bool) (any, bool) {
+func marshalKnownType(v interface{}, ignoreNullValue bool, insertTypeInfo bool) (interface{}, bool) {
 	switch ty := v.(type) {
 	case cserial.TypedMessage:
 		return marshalTypedMessage(&ty, ignoreNullValue, insertTypeInfo), true
@@ -227,14 +227,13 @@ func isValueKind(kind reflect.Kind) bool {
 	}
 }
 
-func marshalInterface(v any, ignoreNullValue bool, insertTypeInfo bool) any {
-
+func marshalInterface(v interface{}, ignoreNullValue bool, insertTypeInfo bool) interface{} {
 	if r, ok := marshalKnownType(v, ignoreNullValue, insertTypeInfo); ok {
 		return r
 	}
 
 	rv := reflect.ValueOf(v)
-	if rv.Kind() == reflect.Pointer {
+	if rv.Kind() == reflect.Ptr {
 		rv = rv.Elem()
 	}
 	k := rv.Kind()

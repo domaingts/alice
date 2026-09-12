@@ -28,7 +28,7 @@ type ClientManager struct {
 }
 
 func (m *ClientManager) Dispatch(ctx context.Context, link *transport.Link) error {
-	for range 16 {
+	for i := 0; i < 16; i++ {
 		worker, err := m.Picker.PickAvailable()
 		if err != nil {
 			return err

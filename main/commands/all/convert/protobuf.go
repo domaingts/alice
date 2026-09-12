@@ -41,7 +41,6 @@ Examples:
 }
 
 func executeConvertConfigsToProtobuf(cmd *base.Command, args []string) {
-
 	var optFile string
 	var optDump bool
 	var optType bool

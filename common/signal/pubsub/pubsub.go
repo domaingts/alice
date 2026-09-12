@@ -11,18 +11,18 @@ import (
 )
 
 type Subscriber struct {
-	buffer chan any
+	buffer chan interface{}
 	done   *done.Instance
 }
 
-func (s *Subscriber) push(msg any) {
+func (s *Subscriber) push(msg interface{}) {
 	select {
 	case s.buffer <- msg:
 	default:
 	}
 }
 
-func (s *Subscriber) Wait() <-chan any {
+func (s *Subscriber) Wait() <-chan interface{} {
 	return s.buffer
 }
 
@@ -83,7 +83,7 @@ func (s *Service) Cleanup() error {
 
 func (s *Service) Subscribe(name string) *Subscriber {
 	sub := &Subscriber{
-		buffer: make(chan any, 16),
+		buffer: make(chan interface{}, 16),
 		done:   done.New(),
 	}
 	s.Lock()
@@ -93,7 +93,7 @@ func (s *Service) Subscribe(name string) *Subscriber {
 	return sub
 }
 
-func (s *Service) Publish(name string, message any) {
+func (s *Service) Publish(name string, message interface{}) {
 	s.RLock()
 	defer s.RUnlock()
 

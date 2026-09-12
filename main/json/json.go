@@ -17,7 +17,7 @@ func init() {
 	common.Must(core.RegisterConfigLoader(&core.ConfigFormat{
 		Name:      "JSON",
 		Extension: []string{"json"},
-		Loader: func(input any) (*core.Config, error) {
+		Loader: func(input interface{}) (*core.Config, error) {
 			switch v := input.(type) {
 			case cmdarg.Arg:
 				cf := &conf.Config{}
@@ -41,6 +41,13 @@ func init() {
 				}
 				return cf.Build()
 			case io.Reader:
+				if serial.UseStrictJSON {
+					cfg, err := serial.DecodeJSONConfigStrict(v)
+					if err != nil {
+						return nil, err
+					}
+					return cfg.Build()
+				}
 				return serial.LoadJSONConfig(v)
 			default:
 				return nil, errors.New("unknown type")

@@ -74,7 +74,7 @@ func (g *Instance) initErrorLogger() error {
 }
 
 // Type implements common.HasType.
-func (*Instance) Type() any {
+func (*Instance) Type() interface{} {
 	return (*Instance)(nil)
 }
 
@@ -250,7 +250,7 @@ func (m *MaskedMsgWrapper) String() string {
 }
 
 func init() {
-	common.Must(common.RegisterConfig((*Config)(nil), func(ctx context.Context, config any) (any, error) {
+	common.Must(common.RegisterConfig((*Config)(nil), func(ctx context.Context, config interface{}) (interface{}, error) {
 		return New(ctx, config.(*Config))
 	}))
 }
