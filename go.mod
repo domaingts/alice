@@ -2,7 +2,7 @@ module github.com/xtls/xray-core
 
 go 1.27
 
-replace github.com/xtls/reality => github.com/domaingts/electricity v0.3.1
+replace github.com/xtls/reality => github.com/domaingts/electricity v0.3.0
 
 require (
 	github.com/apernet/quic-go v0.61.1-0.20260806010916-184d081eef3e
@@ -20,20 +20,24 @@ require (
 	github.com/pires/go-proxyproto v0.15.0
 	github.com/refraction-networking/utls v1.8.3-0.20260301010127-aa6edf4b11af
 	github.com/robfig/cron/v3 v3.0.1
-	github.com/sagernet/sing v0.9.6
-	github.com/sagernet/sing-shadowsocks v0.2.9
 	github.com/stretchr/testify v1.12.1
 	github.com/vishvananda/netlink v1.3.1
-	github.com/xtls/reality v0.0.0-20260921001439-3c98159dee38
+	github.com/xtls/reality v0.0.0-20260908062103-8cdf7bf9c7f0
+	github.com/yuin/gopher-lua v1.1.2
 	go4.org/netipx v0.0.0-20260823151212-3075585bcbeb
-	golang.org/x/crypto v0.57.0
-	golang.org/x/exp v0.0.0-20261007192929-f45ad48fbe92
-	golang.org/x/net v0.60.0
+	golang.org/x/crypto v0.58.0
+	golang.org/x/crypto/x509roots/fallback v0.0.0-20261009200856-99e4382b128e
+	golang.org/x/exp v0.0.0-20261009195045-ca0d7ba23607
+	golang.org/x/net v0.61.0
 	golang.org/x/sync v0.24.0
 	golang.org/x/sys v0.49.0
+	golang.zx2c4.com/wintun v0.0.0-20230126152724-0fa3db229ce2
+	golang.zx2c4.com/wireguard v0.0.0-20261006164505-2631ce99a06f
+	golang.zx2c4.com/wireguard/windows v1.1.1
 	google.golang.org/grpc v1.84.0
 	google.golang.org/protobuf v1.36.12
 	gvisor.dev/gvisor v0.0.0-20260122175437-89a5d21be8f0
+	layeh.com/gopher-luar v1.0.11
 	lukechampine.com/blake3 v1.4.1
 	mvdan.cc/gofumpt v0.12.0
 )
@@ -55,7 +59,7 @@ require (
 	github.com/vishvananda/netns v0.0.5 // indirect
 	github.com/wlynxg/anet v0.0.5 // indirect
 	go.yaml.in/yaml/v3 v3.0.5 // indirect
-	golang.org/x/text v0.42.0 // indirect
+	golang.org/x/text v0.43.0 // indirect
 	golang.org/x/time v0.14.0 // indirect
 	golang.org/x/tools v0.51.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260706201446-f0a921348800 // indirect
