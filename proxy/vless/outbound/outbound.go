@@ -284,7 +284,11 @@ func (h *Handler) Process(ctx context.Context, link *transport.Link, dialer inte
 			i, _ := t.FieldByName("input")
 			r, _ := t.FieldByName("rawInput")
 			input = (*bytes.Reader)(unsafe.Pointer(p + i.Offset))
-			rawInput = (*bytes.Buffer)(unsafe.Pointer(p + r.Offset))
+			if r.Type.Kind() == reflect.Pointer {
+				rawInput = *(**bytes.Buffer)(unsafe.Pointer(p + r.Offset))
+			} else {
+				rawInput = (*bytes.Buffer)(unsafe.Pointer(p + r.Offset))
+			}
 		default:
 			panic("unknown VLESS request command")
 		}

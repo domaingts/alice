@@ -583,7 +583,11 @@ func (h *Handler) Process(ctx context.Context, network net.Network, connection s
 				i, _ := t.FieldByName("input")
 				r, _ := t.FieldByName("rawInput")
 				input = (*bytes.Reader)(unsafe.Pointer(p + i.Offset))
-				rawInput = (*bytes.Buffer)(unsafe.Pointer(p + r.Offset))
+				if r.Type.Kind() == reflect.Pointer {
+					rawInput = *(**bytes.Buffer)(unsafe.Pointer(p + r.Offset))
+				} else {
+					rawInput = (*bytes.Buffer)(unsafe.Pointer(p + r.Offset))
+				}
 			}
 		} else {
 			return errors.New("account " + account.ID.String() + " is not able to use the flow " + requestAddons.Flow)

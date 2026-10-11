@@ -7,8 +7,8 @@ github.com/chzyer/readline v0.0.0-20180603132655-2972be24d48e/go.mod h1:nSuG5e5P
 github.com/chzyer/test v0.0.0-20180213035817-a1ea475d72b1/go.mod h1:Q3SI9o4m/ZMnBNeIyt5eFwwo7qiLfzFZmjNmxjkiQlU=
 github.com/cloudflare/circl v1.6.5 h1:O64F26HEqNhznd/hrC5KZXVKYuKM2rx4deZDTc4ihQA=
 github.com/cloudflare/circl v1.6.5/go.mod h1:h5LNyxAc5nTue9DS5jT+48en2PSDYt3zdGnz5OstK6c=
-github.com/domaingts/electricity v0.3.0 h1:pfOcGAkVtkdQgBXuQf36SVIA4GlNDmdELOfFkjPBXB4=
-github.com/domaingts/electricity v0.3.0/go.mod h1:1g50RINyJSua53dzC3eatk8s9pbLTcFwXKO72h/wkBE=
+github.com/domaingts/electricity v0.3.1 h1:1agWMO4cfxBgvaLk7RPdz2f0fT87/tOd+f/xK0ApYmU=
+github.com/domaingts/electricity v0.3.1/go.mod h1:B5p+ead8j1vDdt4Lj8SnBJub+t91fMBJ+M9VghoN9YI=
 github.com/ghodss/yaml v1.0.1-0.20220118164431-d8423dcdf344 h1:Arcl6UOIS/kgO2nW3A65HN+7CMjSDP/gofXL4CZt1V4=
 github.com/ghodss/yaml v1.0.1-0.20220118164431-d8423dcdf344/go.mod h1:GIjDIg/heH5DOkXY3YJ/wNhfHsQHoXGjl8G8amsYQ1I=
 github.com/go-quicktest/qt v1.102.0 h1:HSQxCeh5YZH3EL3W39ixjtyaEhcWSXQHtHnMBzSs474=
