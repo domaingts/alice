@@ -1092,7 +1092,7 @@ end
 
 	_ = serverRaw.SetDeadline(time.Now().Add(5 * time.Second))
 	var got [][]byte
-	for i := 0; i < 3; i++ {
+	for range 3 {
 		buf := make([]byte, 64)
 		n, _, err := serverRaw.ReadFrom(buf)
 		if err != nil {

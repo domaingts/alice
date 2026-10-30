@@ -267,12 +267,10 @@ func setUpHTTPTunnel(ctx context.Context, dest net.Destination, target string, u
 
 		var pErr error
 		var wg sync.WaitGroup
-		wg.Add(1)
 
-		go func() {
+		wg.Go(func() {
 			_, pErr = pw.Write(firstPayload)
-			wg.Done()
-		}()
+		})
 
 		resp, err := h2clientConn.RoundTrip(req)
 		if err != nil {
@@ -404,7 +402,7 @@ func (c *earlyDataConn) Read(p []byte) (int, error) {
 }
 
 func init() {
-	common.Must(common.RegisterConfig((*ClientConfig)(nil), func(ctx context.Context, config interface{}) (interface{}, error) {
+	common.Must(common.RegisterConfig((*ClientConfig)(nil), func(ctx context.Context, config any) (any, error) {
 		return NewClient(ctx, config.(*ClientConfig))
 	}))
 }

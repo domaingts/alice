@@ -141,7 +141,7 @@ func TestServiceClientEndsOnlyStalledRequests(t *testing.T) {
 		io.Copy(io.Discard, r.Body)
 		switch r.URL.Path {
 		case "/slow":
-			for i := 0; i < 20; i++ {
+			for range 20 {
 				w.Write([]byte("x"))
 				w.(http.Flusher).Flush()
 				time.Sleep(stall / 4)
@@ -569,8 +569,7 @@ func TestServiceClientForgetsClosedConnections(t *testing.T) {
 		w.Header().Set("Connection", "close")
 	}))
 	defer server.Close()
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := t.Context()
 	connCtx := &afterFuncs{Context: ctx}
 	client := newServiceClient(connCtx, new(sync.Map), &internet.MemoryStreamConfig{}, 5*time.Second, 8)
 
@@ -828,8 +827,7 @@ func (r *recorder) dialUDP(ctx context.Context, dest xnet.Destination) (net.Pack
 // and neither leaves anything on the context that closes the connections
 func TestServiceClientH3Closes(t *testing.T) {
 	server := newH3Server(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := t.Context()
 	for _, pin := range [][]byte{server.hash[:], make([]byte, 32)} {
 		rec := new(recorder)
 		settings := server.settings(&tls.Config{})

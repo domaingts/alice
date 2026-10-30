@@ -31,7 +31,7 @@ func getModuleInfo(pwd string) (modPath, langVersion string, err error) {
 	if err != nil {
 		return "", "", err
 	}
-	for _, line := range strings.Split(string(data), "\n") {
+	for line := range strings.SplitSeq(string(data), "\n") {
 		fields := strings.Fields(line)
 		if len(fields) >= 2 {
 			switch fields[0] {
@@ -257,10 +257,7 @@ func diff(oldName string, old []byte, newName string, new []byte) []byte {
 		}
 
 		if len(ctext) > 0 {
-			n := end.x - start.x
-			if n > C {
-				n = C
-			}
+			n := min(end.x-start.x, C)
 			for _, s := range x[start.x : start.x+n] {
 				ctext = append(ctext, " "+s)
 				count.x++
@@ -343,7 +340,7 @@ func diffTgs(x, y []string) []pair {
 	for i := range T {
 		T[i] = n + 1
 	}
-	for i := 0; i < n; i++ {
+	for i := range n {
 		k := sort.Search(n, func(k int) bool {
 			return T[k] >= J[i]
 		})

@@ -163,7 +163,7 @@ func main() {
 
 	req := &pluginpb.CodeGeneratorRequest{
 		FileToGenerate: protoFiles,
-		Parameter:      proto.String("paths=source_relative"),
+		Parameter:      new("paths=source_relative"),
 		ProtoFile:      topoSort(fdList),
 		// TODO: replace with unknown in the future
 		CompilerVersion: &pluginpb.Version{

@@ -3,6 +3,7 @@ package conf
 import (
 	"context"
 	"encoding/json"
+	"maps"
 	"os"
 	"path/filepath"
 	"strings"
@@ -26,33 +27,33 @@ import (
 
 var (
 	inboundConfigLoader = NewJSONConfigLoader(ConfigCreatorCache{
-		"tunnel":        func() interface{} { return new(DokodemoConfig) },
-		"dokodemo-door": func() interface{} { return new(DokodemoConfig) },
-		"http":          func() interface{} { return new(HTTPServerConfig) },
-		"shadowsocks":   func() interface{} { return new(ShadowsocksServerConfig) },
-		"mixed":         func() interface{} { return new(SocksServerConfig) },
-		"socks":         func() interface{} { return new(SocksServerConfig) },
-		"vless":         func() interface{} { return new(VLessInboundConfig) },
-		"wireguard":     func() interface{} { return &WireGuardConfig{IsClient: false} },
-		"hysteria":      func() interface{} { return new(HysteriaServerConfig) },
-		"masque":        func() interface{} { return new(MasqueServerConfig) },
-		"tun":           func() interface{} { return new(TunConfig) },
+		"tunnel":        func() any { return new(DokodemoConfig) },
+		"dokodemo-door": func() any { return new(DokodemoConfig) },
+		"http":          func() any { return new(HTTPServerConfig) },
+		"shadowsocks":   func() any { return new(ShadowsocksServerConfig) },
+		"mixed":         func() any { return new(SocksServerConfig) },
+		"socks":         func() any { return new(SocksServerConfig) },
+		"vless":         func() any { return new(VLessInboundConfig) },
+		"wireguard":     func() any { return &WireGuardConfig{IsClient: false} },
+		"hysteria":      func() any { return new(HysteriaServerConfig) },
+		"masque":        func() any { return new(MasqueServerConfig) },
+		"tun":           func() any { return new(TunConfig) },
 	}, "protocol", "settings")
 
 	outboundConfigLoader = NewJSONConfigLoader(ConfigCreatorCache{
-		"block":       func() interface{} { return new(BlackholeConfig) },
-		"blackhole":   func() interface{} { return new(BlackholeConfig) },
-		"loopback":    func() interface{} { return new(LoopbackConfig) },
-		"direct":      func() interface{} { return new(FreedomConfig) },
-		"freedom":     func() interface{} { return new(FreedomConfig) },
-		"http":        func() interface{} { return new(HTTPClientConfig) },
-		"shadowsocks": func() interface{} { return new(ShadowsocksClientConfig) },
-		"socks":       func() interface{} { return new(SocksClientConfig) },
-		"vless":       func() interface{} { return new(VLessOutboundConfig) },
-		"hysteria":    func() interface{} { return new(HysteriaClientConfig) },
-		"masque":      func() interface{} { return new(MasqueClientConfig) },
-		"dns":         func() interface{} { return new(DNSOutboundConfig) },
-		"wireguard":   func() interface{} { return &WireGuardConfig{IsClient: true} },
+		"block":       func() any { return new(BlackholeConfig) },
+		"blackhole":   func() any { return new(BlackholeConfig) },
+		"loopback":    func() any { return new(LoopbackConfig) },
+		"direct":      func() any { return new(FreedomConfig) },
+		"freedom":     func() any { return new(FreedomConfig) },
+		"http":        func() any { return new(HTTPClientConfig) },
+		"shadowsocks": func() any { return new(ShadowsocksClientConfig) },
+		"socks":       func() any { return new(SocksClientConfig) },
+		"vless":       func() any { return new(VLessOutboundConfig) },
+		"hysteria":    func() any { return new(HysteriaClientConfig) },
+		"masque":      func() any { return new(MasqueClientConfig) },
+		"dns":         func() any { return new(DNSOutboundConfig) },
+		"wireguard":   func() any { return &WireGuardConfig{IsClient: true} },
 	}, "protocol", "settings")
 )
 
@@ -243,7 +244,7 @@ func requiresTransportSecurity(address *Address) bool {
 	return !geodata.GetPrivateDomainMatcher().MatchAny(domain)
 }
 
-func validateOutboundTransportSecurity(rawConfig interface{}, senderSettings *proxyman.SenderConfig) error {
+func validateOutboundTransportSecurity(rawConfig any, senderSettings *proxyman.SenderConfig) error {
 	if senderSettings.StreamSettings != nil && senderSettings.StreamSettings.GetSecurityType() != "" {
 		return nil
 	}
@@ -439,9 +440,7 @@ func (c *StatsConfig) Build() (*stats.Config, error) {
 type EnvConfig map[string]string
 
 func (c EnvConfig) Override(o EnvConfig) {
-	for key, value := range o {
-		c[key] = value
-	}
+	maps.Copy(c, o)
 }
 
 type Config struct {

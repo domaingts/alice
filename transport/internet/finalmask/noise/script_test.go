@@ -171,7 +171,7 @@ function HandleNoise(plan, address) plan:Add("n") end`
 	require.NoError(t, err)
 
 	addr := &net.UDPAddr{Port: 1}
-	for i := 0; i < 3; i++ {
+	for range 3 {
 		_, err := conn.WriteTo([]byte("p"), addr)
 		require.NoError(t, err)
 	}
@@ -311,7 +311,7 @@ function HandleNoise(plan, address)
 end
 `
 	path := writeScript(t, script)
-	for i := 0; i < 2; i++ {
+	for range 2 {
 		raw := &fakePacketConn{}
 		conn, err := NewConnClient(&Config{Script: path}, raw)
 		require.NoError(t, err)
@@ -675,7 +675,7 @@ end
 
 	const peers = 40
 	var wg sync.WaitGroup
-	for i := 0; i < peers; i++ {
+	for i := range peers {
 		wg.Add(1)
 		go func(port int) {
 			defer wg.Done()
