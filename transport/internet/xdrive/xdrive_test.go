@@ -69,6 +69,13 @@ func pairWith(t *testing.T, streamSettings *internet.MemoryStreamConfig) (client
 	}
 
 	return client, server, func() {
+		if config, err := streamConfig(streamSettings); err == nil {
+			box := spareBoxFor(config)
+			box.stop.Store(true)
+			for box.busy.Load() {
+				time.Sleep(10 * time.Millisecond)
+			}
+		}
 		client.Close()
 		server.Close()
 		listener.Close()
@@ -368,6 +375,10 @@ func TestStaleAnnounce(t *testing.T) {
 	if err := listener.storage.Put(ctx, uplinkPrefix("ghost")+"/000000000.seg", []byte("x")); err != nil {
 		t.Fatalf("Put: %v", err)
 	}
+	// The listener first saw this entry an hour ago on its own clock.
+	listener.firstSeen = map[string]time.Time{
+		strings.TrimPrefix(stale, sessionsDir+"/"): time.Now().Add(-time.Hour),
+	}
 
 	accepted, err := listener.acceptPending(ctx)
 	if err != nil {
@@ -540,7 +551,7 @@ func TestFailureMarker(t *testing.T) {
 
 type inlineOnlyStorage struct {
 	Storage
-	gets atomic.Int64
+	gets int64
 }
 
 func (s *inlineOnlyStorage) List(ctx context.Context, prefix string) ([]Entry, error) {
@@ -548,7 +559,7 @@ func (s *inlineOnlyStorage) List(ctx context.Context, prefix string) ([]Entry, e
 }
 
 func (s *inlineOnlyStorage) Get(ctx context.Context, name string) ([]byte, error) {
-	s.gets.Add(1)
+	atomic.AddInt64(&s.gets, 1)
 	return nil, errNotFound
 }
 
@@ -578,7 +589,7 @@ func TestInlinePayload(t *testing.T) {
 		t.Fatal("reader did not deliver the inline payload")
 	}
 
-	if got := storage.gets.Load(); got != 0 {
+	if got := atomic.LoadInt64(&storage.gets); got != 0 {
 		t.Fatalf("called Get %d times for an inline payload", got)
 	}
 }

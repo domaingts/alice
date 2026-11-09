@@ -111,7 +111,7 @@ func marshalStruct(v reflect.Value, ignoreNullValue bool, insertTypeInfo bool) a
 func marshalMap(v reflect.Value, ignoreNullValue bool, insertTypeInfo bool) any {
 	// policy.level is map[uint32] *struct
 	kt := v.Type().Key()
-	vt := reflect.TypeFor[*any]()
+	vt := reflect.TypeOf((*any)(nil))
 	mt := reflect.MapOf(kt, vt)
 	r := reflect.MakeMap(mt)
 	for _, key := range v.MapKeys() {
